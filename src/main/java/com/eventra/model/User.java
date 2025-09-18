@@ -1,5 +1,6 @@
 package com.eventra.model;
 
+import com.eventra.config.AuditListener;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -9,6 +10,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
+@EntityListeners(AuditListener.class)
 @Entity
 @Table(name = "users") // Renamed to 'users' to avoid conflict with SQL keyword 'user'
 @Data
@@ -34,7 +36,7 @@ public class User {
     private String password;
 
     @Column(name = "Role", nullable = false)
-    private String role; // e.g., "ADMIN", "USER"
+    private Role role;
 
     @Column(name = "CreatedAt", nullable = false)
     private LocalDateTime createdAt;

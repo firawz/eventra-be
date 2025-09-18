@@ -1,5 +1,6 @@
 package com.eventra.dto;
 
+import com.eventra.model.Role;
 import lombok.Data;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -21,7 +22,7 @@ public class UserRequest {
     private String password;
 
     @NotBlank(message = "Role is required")
-    private String role;
+    private Role role;
 
     private String gender;
 

@@ -1,9 +1,11 @@
 package com.eventra.service;
 
 import com.eventra.dto.ApiResponse;
+import com.eventra.dto.RegisterRequest;
 import com.eventra.dto.UserRequest;
 import com.eventra.dto.UserResponse;
 import com.eventra.exception.ResourceNotFoundException;
+import com.eventra.model.Role;
 import com.eventra.model.User;
 import com.eventra.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,19 +27,19 @@ public class UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    public ApiResponse<UserResponse> registerUser(UserRequest userRequest) {
-        if (userRepository.findByEmail(userRequest.getEmail()).isPresent()) {
+    public ApiResponse<UserResponse> registerUser(RegisterRequest registerRequest) {
+        if (userRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
             throw new IllegalArgumentException("Email already registered");
         }
 
         User user = new User();
-        user.setFullName(userRequest.getFullName());
-        user.setEmail(userRequest.getEmail());
-        user.setPhone(userRequest.getPhone());
-        user.setPassword(passwordEncoder.encode(userRequest.getPassword()));
-        user.setRole(userRequest.getRole());
-        user.setGender(userRequest.getGender());
-        user.setNik(userRequest.getNik());
+        user.setFullName(registerRequest.getFullName());
+        user.setEmail(registerRequest.getEmail());
+        user.setPhone(registerRequest.getPhone());
+        user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
+        user.setRole(registerRequest.getRole() != null ? registerRequest.getRole() : Role.USER); // Default to USER if not provided
+        user.setGender(registerRequest.getGender());
+        user.setNik(registerRequest.getNik());
         user.setCreatedAt(LocalDateTime.now());
         user.setIsRegistered(true); // Assuming registration means it's registered
 
@@ -77,7 +79,7 @@ public class UserService {
         if (userRequest.getPassword() != null && !userRequest.getPassword().isEmpty()) {
             user.setPassword(passwordEncoder.encode(userRequest.getPassword()));
         }
-        user.setRole(userRequest.getRole());
+        user.setRole(userRequest.getRole() != null ? userRequest.getRole() : user.getRole()); // Keep existing role if not provided
         user.setGender(userRequest.getGender());
         user.setNik(userRequest.getNik());
 

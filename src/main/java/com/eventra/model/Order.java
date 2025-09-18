@@ -1,5 +1,6 @@
 package com.eventra.model;
 
+import com.eventra.config.AuditListener;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,6 +12,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
+@EntityListeners(AuditListener.class)
 @Entity
 @Table(name = "orders")
 @Data
@@ -22,8 +24,7 @@ public class Order {
     private Set<OrderDetail> OrderDetails = new HashSet<>();
 
     @Id
-    @GeneratedValue(generator = "uuid2")
-    @GenericGenerator(name = "uuid2", strategy = "uuid2")
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "Id", updatable = false, nullable = false)
     private UUID id;
 

@@ -20,12 +20,6 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @PostMapping
-    public ResponseEntity<ApiResponse<UserResponse>> createUser(@Valid @RequestBody UserRequest userRequest) {
-        ApiResponse<UserResponse> serviceResponse = userService.registerUser(userRequest);
-        return new ResponseEntity<>(serviceResponse, HttpStatus.CREATED);
-    }
-
     @GetMapping
     public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers(
             @RequestParam(defaultValue = "createdAt") String sortBy,

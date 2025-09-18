@@ -1,5 +1,6 @@
 package com.eventra.model;
 
+import com.eventra.config.AuditListener;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,6 +11,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+@EntityListeners(AuditListener.class)
 @Data
 @Builder
 @NoArgsConstructor

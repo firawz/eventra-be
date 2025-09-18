@@ -1,5 +1,6 @@
 package com.eventra.dto;
 
+import com.eventra.model.Role;
 import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -10,7 +11,7 @@ public class UserResponse {
     private String fullName;
     private String email;
     private String phone;
-    private String role;
+    private Role role;
     private LocalDateTime createdAt;
     private String gender;
     private String nik;
