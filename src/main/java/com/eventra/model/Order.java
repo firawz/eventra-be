@@ -7,6 +7,8 @@ import lombok.AllArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -15,6 +17,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Order {
+
+    @OneToMany(mappedBy = "Order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<OrderDetail> OrderDetails = new HashSet<>();
 
     @Id
     @GeneratedValue(generator = "uuid2")
