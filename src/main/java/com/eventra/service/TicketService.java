@@ -1,6 +1,7 @@
 package com.eventra.service;
 
 import com.eventra.dto.TicketRequest;
+import com.eventra.dto.PaginationResponse;
 import com.eventra.dto.TicketResponse;
 import com.eventra.exception.ResourceNotFoundException;
 import com.eventra.dto.EventResponse;
@@ -12,6 +13,10 @@ import com.eventra.model.Ticket;
 import com.eventra.repository.EventRepository;
 import com.eventra.repository.TicketRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -43,10 +48,22 @@ public class TicketService {
         return mapToResponse(savedTicket);
     }
 
-    public List<TicketResponse> getAllTickets() {
-        return ticketRepository.findAll().stream()
+    public PaginationResponse<TicketResponse> getAllTickets(int page, int limit) {
+        Pageable pageable = PageRequest.of(page - 1, limit, Sort.by("createdAt").descending());
+        Page<Ticket> ticketPage = ticketRepository.findAll(pageable);
+
+        List<TicketResponse> content = ticketPage.getContent().stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+
+        return new PaginationResponse<>(
+                content,
+                ticketPage.getNumber() + 1,
+                ticketPage.getSize(),
+                ticketPage.getTotalElements(),
+                ticketPage.getTotalPages(),
+                ticketPage.isLast()
+        );
     }
 
     public TicketResponse getTicketById(UUID id) {

@@ -3,6 +3,7 @@ package com.eventra.controller;
 import com.eventra.dto.ApiResponse;
 import com.eventra.dto.EventRequest;
 import com.eventra.dto.EventResponse;
+import com.eventra.dto.PaginationResponse;
 import com.eventra.service.EventService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,22 +22,16 @@ public class EventController {
     private EventService eventService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<EventResponse>>> getAllEvents(
-            // @RequestParam(required = false) LocalDate date,
+    public ResponseEntity<ApiResponse<PaginationResponse<EventResponse>>> getAllEvents(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int limit,
             @RequestParam(required = false) String title,
             @RequestParam(required = false) String description,
             @RequestParam(required = false) String sortByDate) {
-        List<EventResponse> events = eventService.getAllEvents(
-            // date,
-            title, description, sortByDate);
+        PaginationResponse<EventResponse> events = eventService.getAllEvents(page, limit, title, description, sortByDate);
         return ResponseEntity.ok(new ApiResponse<>(true, "Events retrieved successfully", events));
     }
 
-    @GetMapping("/search")
-    public ResponseEntity<ApiResponse<List<EventResponse>>> searchEvents(@RequestParam String keyword) {
-        List<EventResponse> events = eventService.searchEvents(keyword);
-        return ResponseEntity.ok(new ApiResponse<>(true, "Events retrieved successfully by keyword", events));
-    }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<EventResponse>> getEventById(@PathVariable UUID id) {

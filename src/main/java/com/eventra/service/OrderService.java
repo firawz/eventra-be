@@ -2,13 +2,14 @@ package com.eventra.service;
 
 import com.eventra.dto.OrderRequest;
 import com.eventra.dto.OrderResponse;
+import com.eventra.dto.PaginationResponse;
 import com.eventra.model.Order;
 
 import java.util.List;
 import java.util.UUID;
 
 public interface OrderService {
-    List<OrderResponse> getAllOrders();
+    PaginationResponse<OrderResponse> getAllOrders(int page, int limit);
     OrderResponse getOrderById(UUID id);
     OrderResponse createOrder(OrderRequest orderRequest);
     OrderResponse updateOrder(UUID id, OrderRequest orderRequest);

@@ -1,6 +1,7 @@
 package com.eventra.controller;
 
 import com.eventra.dto.ApiResponse;
+import com.eventra.dto.PaginationResponse;
 import com.eventra.dto.TicketRequest;
 import com.eventra.dto.TicketResponse;
 import com.eventra.service.TicketService;
@@ -27,8 +28,10 @@ public class TicketController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<TicketResponse>>> getAllTickets() {
-        List<TicketResponse> tickets = ticketService.getAllTickets();
+    public ResponseEntity<ApiResponse<PaginationResponse<TicketResponse>>> getAllTickets(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int limit) {
+        PaginationResponse<TicketResponse> tickets = ticketService.getAllTickets(page, limit);
         return new ResponseEntity<>(new ApiResponse<>(true, "Tickets retrieved successfully", tickets), HttpStatus.OK);
     }
 

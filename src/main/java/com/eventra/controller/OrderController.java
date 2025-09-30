@@ -3,6 +3,7 @@ package com.eventra.controller;
 import com.eventra.dto.ApiResponse;
 import com.eventra.dto.OrderRequest;
 import com.eventra.dto.OrderResponse;
+import com.eventra.dto.PaginationResponse;
 import com.eventra.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,8 +21,10 @@ public class OrderController {
     private OrderService orderService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<OrderResponse>>> getAllOrders() {
-        List<OrderResponse> orders = orderService.getAllOrders();
+    public ResponseEntity<ApiResponse<PaginationResponse<OrderResponse>>> getAllOrders(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int limit) {
+        PaginationResponse<OrderResponse> orders = orderService.getAllOrders(page, limit);
         return ResponseEntity.ok(new ApiResponse<>(true, "Orders retrieved successfully", orders));
     }
 

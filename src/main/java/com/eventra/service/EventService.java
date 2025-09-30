@@ -2,20 +2,28 @@ package com.eventra.service;
 
 import com.eventra.dto.EventRequest;
 import com.eventra.dto.EventResponse;
+import com.eventra.dto.PaginationResponse;
 import com.eventra.model.Event;
 import com.eventra.repository.EventRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import jakarta.persistence.criteria.Predicate;
 
 @Service
 public class EventService {
@@ -25,50 +33,50 @@ public class EventService {
 
     private static final Logger logger = LoggerFactory.getLogger(EventService.class);
 
-    public List<EventResponse> getAllEvents(
-        // LocalDate date,
-        String title, String description, String sortByDate) {
-        // LocalDate parsedDate = null;
-        // if (date != null) {
-        //     try {
-        //         parsedDate = LocalDate.parse(date.toString());
-        //     } catch (DateTimeParseException e) {
-        //         logger.warn("Invalid date format: {}", date, e);
-        //         // Handle invalid date format, perhaps return an empty list or throw a custom exception
-        //         // For now, we'll proceed with parsedDate as null, meaning no date filter will be applied
-        //     }
-        // }
+    public PaginationResponse<EventResponse> getAllEvents(
+            int page, int limit,
+            String title, String description, String sortByDate) {
 
-        List<Event> events;
-
-        if (title != null && !title.isEmpty() && description != null && !description.isEmpty()) {
-            events = eventRepository.findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(title, description);
-        } else if (title != null && !title.isEmpty()) {
-            events = eventRepository.findByTitleContainingIgnoreCase(title);
-        } else if (description != null && !description.isEmpty()) {
-            events = eventRepository.findByDescriptionContainingIgnoreCase(description);
-        } else {
-            events = eventRepository.findAll(); // Return all events if no search parameters
-        }
-
+        Sort sort = Sort.by("createdAt").descending(); // Default sort
         if (sortByDate != null && !sortByDate.isEmpty()) {
             if (sortByDate.equalsIgnoreCase("asc")) {
-                events.sort((e1, e2) -> e1.getStartDate().compareTo(e2.getStartDate()));
+                sort = Sort.by("startDate").ascending();
             } else if (sortByDate.equalsIgnoreCase("desc")) {
-                events.sort((e1, e2) -> e2.getStartDate().compareTo(e1.getStartDate()));
+                sort = Sort.by("startDate").descending();
             }
         }
 
-        return events.stream()
+        Pageable pageable = PageRequest.of(page - 1, limit, sort);
+
+        Specification<Event> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (title != null && !title.isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.get("title")), "%" + title.toLowerCase() + "%"));
+            }
+            if (description != null && !description.isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.get("description")), "%" + description.toLowerCase() + "%"));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        Page<Event> eventPage = eventRepository.findAll(spec, pageable);
+
+        List<EventResponse> content = eventPage.getContent().stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
+
+        return new PaginationResponse<>(
+                content,
+                eventPage.getNumber() + 1,
+                eventPage.getSize(),
+                eventPage.getTotalElements(),
+                eventPage.getTotalPages(),
+                eventPage.isLast()
+        );
     }
 
-    public List<EventResponse> searchEvents(String keyword) {
-        return eventRepository.findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(keyword, keyword).stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-    }
 
     public Optional<EventResponse> getEventById(UUID id) {
         return eventRepository.findById(id)

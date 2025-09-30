@@ -1,6 +1,7 @@
 package com.eventra.controller;
 
 import com.eventra.dto.ApiResponse;
+import com.eventra.dto.PaginationResponse;
 import com.eventra.dto.UserRequest;
 import com.eventra.dto.UserResponse;
 import com.eventra.service.UserService;
@@ -21,12 +22,14 @@ public class UserController {
     private UserService userService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers(
+    public ResponseEntity<ApiResponse<PaginationResponse<UserResponse>>> getAllUsers(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int limit,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir
     ) {
-        ApiResponse<List<UserResponse>> serviceResponse = userService.getAllUsers(sortBy, sortDir);
-        return new ResponseEntity<>(serviceResponse, HttpStatus.OK);
+        PaginationResponse<UserResponse> users = userService.getAllUsers(page, limit, sortBy, sortDir);
+        return new ResponseEntity<>(new ApiResponse<>(true, "Users retrieved successfully", users), HttpStatus.OK);
     }
 
     @GetMapping("/{id}")

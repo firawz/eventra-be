@@ -3,6 +3,7 @@ package com.eventra.controller;
 import com.eventra.dto.ApiResponse;
 import com.eventra.dto.OrderDetailRequest;
 import com.eventra.dto.OrderDetailResponse;
+import com.eventra.dto.PaginationResponse;
 import com.eventra.service.OrderDetailService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -33,8 +34,10 @@ public class OrderDetailController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<OrderDetailResponse>>> getAllOrderDetails() {
-        List<OrderDetailResponse> orderDetails = orderDetailService.getAllOrderDetails();
+    public ResponseEntity<ApiResponse<PaginationResponse<OrderDetailResponse>>> getAllOrderDetails(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int limit) {
+        PaginationResponse<OrderDetailResponse> orderDetails = orderDetailService.getAllOrderDetails(page, limit);
         return new ResponseEntity<>(new ApiResponse<>(true, "Order Details fetched successfully", orderDetails), HttpStatus.OK);
     }
 

@@ -4,6 +4,7 @@ import com.eventra.dto.OrderRequest;
 import com.eventra.dto.OrderResponse;
 import com.eventra.exception.ResourceNotFoundException;
 import com.eventra.model.Event;
+import com.eventra.dto.PaginationResponse;
 import com.eventra.model.Order;
 import com.eventra.model.User;
 import com.eventra.repository.EventRepository;
@@ -11,6 +12,10 @@ import com.eventra.repository.OrderRepository;
 import com.eventra.repository.UserRepository;
 import com.eventra.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -31,10 +36,22 @@ public class OrderServiceImpl implements OrderService {
     private EventRepository eventRepository;
 
     @Override
-    public List<OrderResponse> getAllOrders() {
-        return orderRepository.findAll().stream()
+    public PaginationResponse<OrderResponse> getAllOrders(int page, int limit) {
+        Pageable pageable = PageRequest.of(page - 1, limit, Sort.by("createdAt").descending());
+        Page<Order> orderPage = orderRepository.findAll(pageable);
+
+        List<OrderResponse> content = orderPage.getContent().stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
+
+        return new PaginationResponse<>(
+                content,
+                orderPage.getNumber() + 1,
+                orderPage.getSize(),
+                orderPage.getTotalElements(),
+                orderPage.getTotalPages(),
+                orderPage.isLast()
+        );
     }
 
     @Override

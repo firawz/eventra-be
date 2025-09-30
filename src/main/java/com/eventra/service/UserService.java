@@ -3,12 +3,17 @@ package com.eventra.service;
 import com.eventra.dto.ApiResponse;
 import com.eventra.dto.RegisterRequest;
 import com.eventra.dto.UserRequest;
+import com.eventra.dto.PaginationResponse;
 import com.eventra.dto.UserResponse;
 import com.eventra.exception.ResourceNotFoundException;
 import com.eventra.model.Role;
 import com.eventra.model.User;
 import com.eventra.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -16,7 +21,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import org.springframework.data.domain.Sort;
 
 @Service
 public class UserService {
@@ -47,19 +51,23 @@ public class UserService {
         return new ApiResponse<>(true, "User created successfully", mapUserToUserResponse(savedUser));
     }
 
-    public ApiResponse<List<UserResponse>> getAllUsers(String sortBy, String sortDir) {
+    public PaginationResponse<UserResponse> getAllUsers(int page, int limit, String sortBy, String sortDir) {
         Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
-        List<UserResponse> users = userRepository.findAll(sort).stream()
-                .map(this::mapUserToUserResponse)
-                .collect(Collectors.toList());
-        return new ApiResponse<>(true, "Users retrieved successfully", users);
-    }
+        Pageable pageable = PageRequest.of(page - 1, limit, sort);
+        Page<User> userPage = userRepository.findAll(pageable);
 
-    public ApiResponse<List<UserResponse>> getAllUsers() {
-        List<UserResponse> users = userRepository.findAll().stream()
+        List<UserResponse> content = userPage.getContent().stream()
                 .map(this::mapUserToUserResponse)
                 .collect(Collectors.toList());
-        return new ApiResponse<>(true, "Users retrieved successfully", users);
+
+        return new PaginationResponse<>(
+                content,
+                userPage.getNumber() + 1,
+                userPage.getSize(),
+                userPage.getTotalElements(),
+                userPage.getTotalPages(),
+                userPage.isLast()
+        );
     }
 
     public ApiResponse<UserResponse> getUserById(UUID id) {

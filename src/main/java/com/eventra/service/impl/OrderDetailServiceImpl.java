@@ -3,12 +3,17 @@ package com.eventra.service.impl;
 import com.eventra.dto.OrderDetailRequest;
 import com.eventra.dto.OrderDetailResponse;
 import com.eventra.exception.ResourceNotFoundException;
+import com.eventra.dto.PaginationResponse;
 import com.eventra.model.Order;
 import com.eventra.model.OrderDetail;
 import com.eventra.repository.OrderDetailRepository;
 import com.eventra.repository.OrderRepository;
 import com.eventra.service.OrderDetailService;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -48,10 +53,22 @@ public class OrderDetailServiceImpl implements OrderDetailService {
     }
 
     @Override
-    public List<OrderDetailResponse> getAllOrderDetails() {
-        return orderDetailRepository.findAll().stream()
+    public PaginationResponse<OrderDetailResponse> getAllOrderDetails(int page, int limit) {
+        Pageable pageable = PageRequest.of(page - 1, limit, Sort.by("createdAt").descending());
+        Page<OrderDetail> orderDetailPage = orderDetailRepository.findAll(pageable);
+
+        List<OrderDetailResponse> content = orderDetailPage.getContent().stream()
                 .map(this::mapToOrderDetailResponse)
                 .collect(Collectors.toList());
+
+        return new PaginationResponse<>(
+                content,
+                orderDetailPage.getNumber() + 1,
+                orderDetailPage.getSize(),
+                orderDetailPage.getTotalElements(),
+                orderDetailPage.getTotalPages(),
+                orderDetailPage.isLast()
+        );
     }
 
     @Override
