@@ -18,6 +18,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import com.eventra.service.AuditService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.UUID;
@@ -26,74 +29,119 @@ import java.util.stream.Collectors;
 @Service
 public class TicketService {
 
+    private static final Logger logger = LoggerFactory.getLogger(TicketService.class);
+
     @Autowired
     private TicketRepository ticketRepository;
 
     @Autowired
     private EventRepository eventRepository;
 
+    @Autowired
+    private AuditService auditService;
+
     public TicketResponse createTicket(TicketRequest ticketRequest) {
-        Event event = eventRepository.findById(ticketRequest.getEventId())
-                .orElseThrow(() -> new ResourceNotFoundException("Event not found with id " + ticketRequest.getEventId()));
+        try {
+            Event event = eventRepository.findById(ticketRequest.getEventId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Event not found with id " + ticketRequest.getEventId()));
 
-        Ticket ticket = new Ticket();
-        ticket.setEvent(event);
-        ticket.setTicketCategory(ticketRequest.getTicketCategory());
-        ticket.setPrice(ticketRequest.getPrice());
-        ticket.setQuota(ticketRequest.getQuota());
-        // Set createdBy from authenticated user if available
-        ticket.setCreatedBy("admin"); // Placeholder for now
+            Ticket ticket = new Ticket();
+            ticket.setEvent(event);
+            ticket.setTicketCategory(ticketRequest.getTicketCategory());
+            ticket.setPrice(ticketRequest.getPrice());
+            ticket.setQuota(ticketRequest.getQuota());
+            // Set createdBy from authenticated user if available
+            ticket.setCreatedBy("admin"); // Placeholder for now
 
-        Ticket savedTicket = ticketRepository.save(ticket);
-        return mapToResponse(savedTicket);
+            Ticket savedTicket = ticketRepository.save(ticket);
+            auditService.publishAudit(savedTicket, "CREATE");
+            return mapToResponse(savedTicket);
+        } catch (ResourceNotFoundException e) {
+            logger.warn("Resource not found during createTicket: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error creating ticket: {}", e.getMessage(), e);
+            throw new RuntimeException("Error creating ticket: " + e.getMessage());
+        }
     }
 
     public PaginationResponse<TicketResponse> getAllTickets(int page, int limit) {
-        Pageable pageable = PageRequest.of(page - 1, limit, Sort.by("createdAt").descending());
-        Page<Ticket> ticketPage = ticketRepository.findAll(pageable);
+        try {
+            Pageable pageable = PageRequest.of(page - 1, limit, Sort.by("createdAt").descending());
+            Page<Ticket> ticketPage = ticketRepository.findAll(pageable);
 
-        List<TicketResponse> content = ticketPage.getContent().stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+            List<TicketResponse> content = ticketPage.getContent().stream()
+                    .map(this::mapToResponse)
+                    .collect(Collectors.toList());
 
-        return new PaginationResponse<>(
-                content,
-                ticketPage.getNumber() + 1,
-                ticketPage.getSize(),
-                ticketPage.getTotalElements(),
-                ticketPage.getTotalPages(),
-                ticketPage.isLast()
-        );
+            return new PaginationResponse<>(
+                    content,
+                    ticketPage.getNumber() + 1,
+                    ticketPage.getSize(),
+                    ticketPage.getTotalElements(),
+                    ticketPage.getTotalPages(),
+                    ticketPage.isLast()
+            );
+        } catch (Exception e) {
+            logger.error("Error retrieving all tickets: {}", e.getMessage(), e);
+            throw new RuntimeException("Error retrieving all tickets: " + e.getMessage());
+        }
     }
 
     public TicketResponse getTicketById(UUID id) {
-        Ticket ticket = ticketRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found with id " + id));
-        return mapToResponse(ticket);
+        try {
+            Ticket ticket = ticketRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Ticket not found with id " + id));
+            return mapToResponse(ticket);
+        } catch (ResourceNotFoundException e) {
+            logger.warn("Resource not found during getTicketById for ID {}: {}", id, e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error retrieving ticket by ID {}: {}", id, e.getMessage(), e);
+            throw new RuntimeException("Error retrieving ticket by ID: " + e.getMessage());
+        }
     }
 
     public TicketResponse updateTicket(UUID id, TicketRequest ticketRequest) {
-        Ticket ticket = ticketRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found with id " + id));
+        try {
+            Ticket ticket = ticketRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Ticket not found with id " + id));
 
-        Event event = eventRepository.findById(ticketRequest.getEventId())
-                .orElseThrow(() -> new ResourceNotFoundException("Event not found with id " + ticketRequest.getEventId()));
+            Event event = eventRepository.findById(ticketRequest.getEventId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Event not found with id " + ticketRequest.getEventId()));
 
-        ticket.setEvent(event);
-        ticket.setTicketCategory(ticketRequest.getTicketCategory());
-        ticket.setPrice(ticketRequest.getPrice());
-        ticket.setQuota(ticketRequest.getQuota());
-        // Set updatedBy from authenticated user if available
-        ticket.setUpdatedBy("admin"); // Placeholder for now
+            ticket.setEvent(event);
+            ticket.setTicketCategory(ticketRequest.getTicketCategory());
+            ticket.setPrice(ticketRequest.getPrice());
+            ticket.setQuota(ticketRequest.getQuota());
+            // Set updatedBy from authenticated user if available
+            ticket.setUpdatedBy("admin"); // Placeholder for now
 
-        Ticket updatedTicket = ticketRepository.save(ticket);
-        return mapToResponse(updatedTicket);
+            Ticket updatedTicket = ticketRepository.save(ticket);
+            auditService.publishAudit(updatedTicket, "UPDATE");
+            return mapToResponse(updatedTicket);
+        } catch (ResourceNotFoundException e) {
+            logger.warn("Resource not found during updateTicket for ID {}: {}", id, e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error updating ticket with ID {}: {}", id, e.getMessage(), e);
+            throw new RuntimeException("Error updating ticket: " + e.getMessage());
+        }
     }
 
     public void deleteTicket(UUID id) {
-        Ticket ticket = ticketRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found with id " + id));
-        ticketRepository.delete(ticket);
+        try {
+            Ticket ticket = ticketRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Ticket not found with id " + id));
+            ticketRepository.delete(ticket);
+            auditService.publishAudit(ticket, "DELETE");
+        } catch (ResourceNotFoundException e) {
+            logger.warn("Resource not found during deleteTicket for ID {}: {}", id, e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error deleting ticket with ID {}: {}", id, e.getMessage(), e);
+            throw new RuntimeException("Error deleting ticket: " + e.getMessage());
+        }
     }
 
     private TicketResponse mapToResponse(Ticket ticket) {

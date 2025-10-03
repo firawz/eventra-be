@@ -1,6 +1,5 @@
 package com.eventra.model;
 
-import com.eventra.config.AuditListener;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,7 +11,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-@EntityListeners(AuditListener.class)
 @Entity
 @Table(name = "orders")
 @Data

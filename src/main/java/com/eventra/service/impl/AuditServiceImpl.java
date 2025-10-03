@@ -1,22 +1,19 @@
 package com.eventra.service.impl;
 
-import com.eventra.model.AuditEntity;
-import com.eventra.repository.AuditRepository;
+import com.eventra.event.AuditCreatedEvent;
 import com.eventra.service.AuditService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
-public abstract class AuditServiceImpl<T extends AuditEntity> implements AuditService<T> {
-
-    private final AuditRepository<T> auditRepository;
+@Service
+public class AuditServiceImpl implements AuditService {
 
     @Autowired
-    public AuditServiceImpl(AuditRepository<T> auditRepository) {
-        this.auditRepository = auditRepository;
-    }
+    private ApplicationEventPublisher eventPublisher;
 
     @Override
-    public void createAudit(T auditEntity) {
-        auditRepository.save(auditEntity);
+    public void publishAudit(Object entity, String action) {
+        eventPublisher.publishEvent(new AuditCreatedEvent(this, entity, action));
     }
 }

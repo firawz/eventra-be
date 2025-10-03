@@ -13,10 +13,14 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/events")
 public class EventController {
+
+    private static final Logger logger = LoggerFactory.getLogger(EventController.class);
 
     @Autowired
     private EventService eventService;
@@ -28,37 +32,62 @@ public class EventController {
             @RequestParam(required = false) String title,
             @RequestParam(required = false) String description,
             @RequestParam(required = false) String sortByDate) {
-        PaginationResponse<EventResponse> events = eventService.getAllEvents(page, limit, title, description, sortByDate);
-        return ResponseEntity.ok(new ApiResponse<>(true, "Events retrieved successfully", events));
+        try {
+            PaginationResponse<EventResponse> events = eventService.getAllEvents(page, limit, title, description, sortByDate);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Events retrieved successfully", events));
+        } catch (Exception e) {
+            logger.error("Error retrieving all events: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(false, "Error retrieving events: " + e.getMessage(), null));
+        }
     }
 
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<EventResponse>> getEventById(@PathVariable UUID id) {
-        return eventService.getEventById(id)
-                .map(eventResponse -> ResponseEntity.ok(new ApiResponse<>(true, "Event retrieved successfully", eventResponse)))
-                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>(false, "Event not found", null)));
+        try {
+            return eventService.getEventById(id)
+                    .map(eventResponse -> ResponseEntity.ok(new ApiResponse<>(true, "Event retrieved successfully", eventResponse)))
+                    .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>(false, "Event not found", null)));
+        } catch (Exception e) {
+            logger.error("Error retrieving event by ID {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(false, "Error retrieving event: " + e.getMessage(), null));
+        }
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<EventResponse>> createEvent(@Valid @RequestBody EventRequest eventRequest) {
-        EventResponse createdEvent = eventService.createEvent(eventRequest);
-        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>(true, "Event created successfully", createdEvent));
+        try {
+            EventResponse createdEvent = eventService.createEvent(eventRequest);
+            return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>(true, "Event created successfully", createdEvent));
+        } catch (Exception e) {
+            logger.error("Error creating event: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(false, "Error creating event: " + e.getMessage(), null));
+        }
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<EventResponse>> updateEvent(@PathVariable UUID id, @Valid @RequestBody EventRequest eventRequest) {
-        return eventService.updateEvent(id, eventRequest)
-                .map(eventResponse -> ResponseEntity.ok(new ApiResponse<>(true, "Event updated successfully", eventResponse)))
-                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>(false, "Event not found", null)));
+        try {
+            return eventService.updateEvent(id, eventRequest)
+                    .map(eventResponse -> ResponseEntity.ok(new ApiResponse<>(true, "Event updated successfully", eventResponse)))
+                    .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>(false, "Event not found", null)));
+        } catch (Exception e) {
+            logger.error("Error updating event with ID {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(false, "Error updating event: " + e.getMessage(), null));
+        }
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteEvent(@PathVariable UUID id) {
-        if (eventService.deleteEvent(id)) {
-            return ResponseEntity.ok(new ApiResponse<>(true, "Event deleted successfully", null));
+        try {
+            if (eventService.deleteEvent(id)) {
+                return ResponseEntity.ok(new ApiResponse<>(true, "Event deleted successfully", null));
+            }
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>(false, "Event not found", null));
+        } catch (Exception e) {
+            logger.error("Error deleting event with ID {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(false, "Error deleting event: " + e.getMessage(), null));
         }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>(false, "Event not found", null));
     }
 
     // Generic API Response class

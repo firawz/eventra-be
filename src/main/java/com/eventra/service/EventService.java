@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import jakarta.persistence.criteria.Predicate;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class EventService {
@@ -31,92 +32,126 @@ public class EventService {
     @Autowired
     private EventRepository eventRepository;
 
+    @Autowired
+    private AuditService auditService;
+
     private static final Logger logger = LoggerFactory.getLogger(EventService.class);
 
     public PaginationResponse<EventResponse> getAllEvents(
             int page, int limit,
             String title, String description, String sortByDate) {
-
-        Sort sort = Sort.by("createdAt").descending(); // Default sort
-        if (sortByDate != null && !sortByDate.isEmpty()) {
-            if (sortByDate.equalsIgnoreCase("asc")) {
-                sort = Sort.by("startDate").ascending();
-            } else if (sortByDate.equalsIgnoreCase("desc")) {
-                sort = Sort.by("startDate").descending();
+        try {
+            Sort sort = Sort.by("createdAt").descending(); // Default sort
+            if (sortByDate != null && !sortByDate.isEmpty()) {
+                if (sortByDate.equalsIgnoreCase("asc")) {
+                    sort = Sort.by("startDate").ascending();
+                } else if (sortByDate.equalsIgnoreCase("desc")) {
+                    sort = Sort.by("startDate").descending();
+                }
             }
+
+            Pageable pageable = PageRequest.of(page - 1, limit, sort);
+
+            Specification<Event> spec = (root, query, cb) -> {
+                List<Predicate> predicates = new ArrayList<>();
+
+                if (title != null && !title.isEmpty()) {
+                    predicates.add(cb.like(cb.lower(root.get("title")), "%" + title.toLowerCase() + "%"));
+                }
+                if (description != null && !description.isEmpty()) {
+                    predicates.add(cb.like(cb.lower(root.get("description")), "%" + description.toLowerCase() + "%"));
+                }
+
+                return cb.and(predicates.toArray(new Predicate[0]));
+            };
+
+            Page<Event> eventPage = eventRepository.findAll(spec, pageable);
+
+            List<EventResponse> content = eventPage.getContent().stream()
+                    .map(this::convertToDto)
+                    .collect(Collectors.toList());
+
+            return new PaginationResponse<>(
+                    content,
+                    eventPage.getNumber() + 1,
+                    eventPage.getSize(),
+                    eventPage.getTotalElements(),
+                    eventPage.getTotalPages(),
+                    eventPage.isLast()
+            );
+        } catch (Exception e) {
+            logger.error("Error retrieving all events: {}", e.getMessage(), e);
+            throw new RuntimeException("Error retrieving all events: " + e.getMessage());
         }
-
-        Pageable pageable = PageRequest.of(page - 1, limit, sort);
-
-        Specification<Event> spec = (root, query, cb) -> {
-            List<Predicate> predicates = new ArrayList<>();
-
-            if (title != null && !title.isEmpty()) {
-                predicates.add(cb.like(cb.lower(root.get("title")), "%" + title.toLowerCase() + "%"));
-            }
-            if (description != null && !description.isEmpty()) {
-                predicates.add(cb.like(cb.lower(root.get("description")), "%" + description.toLowerCase() + "%"));
-            }
-
-            return cb.and(predicates.toArray(new Predicate[0]));
-        };
-
-        Page<Event> eventPage = eventRepository.findAll(spec, pageable);
-
-        List<EventResponse> content = eventPage.getContent().stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-
-        return new PaginationResponse<>(
-                content,
-                eventPage.getNumber() + 1,
-                eventPage.getSize(),
-                eventPage.getTotalElements(),
-                eventPage.getTotalPages(),
-                eventPage.isLast()
-        );
     }
 
 
     public Optional<EventResponse> getEventById(UUID id) {
-        return eventRepository.findById(id)
-                .map(this::convertToDto);
+        try {
+            return eventRepository.findById(id)
+                    .map(this::convertToDto);
+        } catch (Exception e) {
+            logger.error("Error retrieving event by ID {}: {}", id, e.getMessage(), e);
+            throw new RuntimeException("Error retrieving event by ID: " + e.getMessage());
+        }
     }
 
     public EventResponse createEvent(EventRequest eventRequest) {
-        Event event = new Event();
-        event.setTitle(eventRequest.getTitle());
-        event.setDescription(eventRequest.getDescription());
-        event.setLocation(eventRequest.getLocation());
-        event.setStartDate(eventRequest.getStartDate());
-        event.setEndDate(eventRequest.getEndDate());
-        event.setCreatedBy(eventRequest.getCreatedBy());
-        event.setCreatedAt(LocalDateTime.now());
-        Event savedEvent = eventRepository.save(event);
-        return convertToDto(savedEvent);
-    }
-
-    public Optional<EventResponse> updateEvent(UUID id, EventRequest eventRequest) {
-        return eventRepository.findById(id)
-                .map(existingEvent -> {
-                    existingEvent.setTitle(eventRequest.getTitle());
-                    existingEvent.setDescription(eventRequest.getDescription());
-                    existingEvent.setLocation(eventRequest.getLocation());
-                    existingEvent.setStartDate(eventRequest.getStartDate());
-                    existingEvent.setEndDate(eventRequest.getEndDate());
-                    existingEvent.setUpdatedBy(eventRequest.getUpdatedBy());
-                    existingEvent.setUpdatedAt(LocalDateTime.now());
-                    Event updatedEvent = eventRepository.save(existingEvent);
-                    return convertToDto(updatedEvent);
-                });
-    }
-
-    public boolean deleteEvent(UUID id) {
-        if (eventRepository.existsById(id)) {
-            eventRepository.deleteById(id);
-            return true;
+        try {
+            Event event = new Event();
+            event.setTitle(eventRequest.getTitle());
+            event.setDescription(eventRequest.getDescription());
+            event.setLocation(eventRequest.getLocation());
+            event.setStartDate(eventRequest.getStartDate());
+            event.setEndDate(eventRequest.getEndDate());
+            event.setCreatedBy(eventRequest.getCreatedBy());
+            event.setCreatedAt(LocalDateTime.now());
+            Event savedEvent = eventRepository.save(event);
+            auditService.publishAudit(savedEvent, "CREATE");
+            return convertToDto(savedEvent);
+        } catch (Exception e) {
+            logger.error("Error creating event: {}", e.getMessage(), e);
+            throw new RuntimeException("Error creating event: " + e.getMessage());
         }
-        return false;
+    }
+
+    @Transactional
+    public Optional<EventResponse> updateEvent(UUID id, EventRequest eventRequest) {
+        try {
+            return eventRepository.findById(id)
+                    .map(existingEvent -> {
+                        existingEvent.setTitle(eventRequest.getTitle());
+                        existingEvent.setDescription(eventRequest.getDescription());
+                        existingEvent.setLocation(eventRequest.getLocation());
+                        existingEvent.setStartDate(eventRequest.getStartDate());
+                        existingEvent.setEndDate(eventRequest.getEndDate());
+                        existingEvent.setUpdatedBy(eventRequest.getUpdatedBy());
+                        existingEvent.setUpdatedAt(LocalDateTime.now());
+                        Event updatedEvent = eventRepository.save(existingEvent);
+                        auditService.publishAudit(updatedEvent, "UPDATE");
+                        return convertToDto(updatedEvent);
+                    });
+        } catch (Exception e) {
+            logger.error("Error updating event with ID {}: {}", id, e.getMessage(), e);
+            throw new RuntimeException("Error updating event: " + e.getMessage());
+        }
+    }
+
+    @Transactional
+    public boolean deleteEvent(UUID id) {
+        try {
+            Optional<Event> eventOptional = eventRepository.findById(id);
+            if (eventOptional.isPresent()) {
+                Event eventToDelete = eventOptional.get();
+                eventRepository.deleteById(id);
+                auditService.publishAudit(eventToDelete, "DELETE");
+                return true;
+            }
+            return false;
+        } catch (Exception e) {
+            logger.error("Error deleting event with ID {}: {}", id, e.getMessage(), e);
+            throw new RuntimeException("Error deleting event: " + e.getMessage());
+        }
     }
 
     private EventResponse convertToDto(Event event) {

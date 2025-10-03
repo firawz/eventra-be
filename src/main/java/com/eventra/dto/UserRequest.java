@@ -22,7 +22,7 @@ public class UserRequest {
     private String password;
 
     @NotBlank(message = "Role is required")
-    private Role role;
+    private String role; // Changed to String
 
     private String gender;
 
