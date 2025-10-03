@@ -3,8 +3,10 @@ package com.eventra.controller;
 import com.eventra.config.JwtUtil;
 import com.eventra.dto.ApiResponse;
 import com.eventra.dto.AuthRequest;
+import com.eventra.dto.JwtResponse; // Import JwtResponse
 import com.eventra.dto.RegisterRequest;
 import com.eventra.dto.UserResponse;
+import com.eventra.model.User; // Import User model
 import com.eventra.service.UserService;
 import jakarta.validation.Valid; // Added for validation
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +22,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Optional; // Import Optional
 
 @RestController
 @RequestMapping("/api/auth")
@@ -37,12 +41,18 @@ public class AuthController {
     private UserService userService;
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<String>> authenticateAndGetToken(@RequestBody AuthRequest authRequest) {
+    public ResponseEntity<ApiResponse<JwtResponse>> authenticateAndGetToken(@RequestBody AuthRequest authRequest) {
         try {
             Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authRequest.getEmail(), authRequest.getPassword()));
             if (authentication.isAuthenticated()) {
-                String token = jwtUtil.generateToken(authRequest.getEmail());
-                return new ResponseEntity<>(new ApiResponse<>(true, "Login Successful", token), HttpStatus.OK);
+                Optional<User> userOptional = userService.getUserByEmail(authRequest.getEmail());
+                if (userOptional.isEmpty()) {
+                    throw new UsernameNotFoundException("User not found with email: " + authRequest.getEmail());
+                }
+                User user = userOptional.get();
+                String token = jwtUtil.generateToken( user.getId());
+                JwtResponse jwtResponse = new JwtResponse(token);
+                return new ResponseEntity<>(new ApiResponse<>(true, "Login Successful", jwtResponse), HttpStatus.OK);
             } else {
                 throw new UsernameNotFoundException("invalid user request !");
             }

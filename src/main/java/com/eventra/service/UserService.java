@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.transaction.annotation.Transactional; // Added import
+import java.util.Optional; // Import Optional
 
 @Service
 public class UserService {
@@ -63,6 +64,10 @@ public class UserService {
 			e.printStackTrace(); // Print full stack trace for detailed debugging
 			return new ApiResponse<>(false, e.getMessage(), null);
 		}
+	}
+
+	public Optional<User> getUserByEmail(String email) {
+		return userRepository.findByEmail(email);
 	}
 
 	private User createUserFromRegisterRequest(RegisterRequest registerRequest) {
