@@ -20,57 +20,61 @@ import java.util.UUID;
 @RequestMapping("/api/users")
 public class UserController {
 
-    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
+	private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
-    @Autowired
-    private UserService userService;
+	@Autowired
+	private UserService userService;
 
-    @GetMapping
-    public ResponseEntity<ApiResponse<PaginationResponse<UserResponse>>> getAllUsers(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int limit,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir
-    ) {
-        try {
-            PaginationResponse<UserResponse> users = userService.getAllUsers(page, limit, sortBy, sortDir);
-            return new ResponseEntity<>(new ApiResponse<>(true, "Users retrieved successfully", users), HttpStatus.OK);
-        } catch (Exception e) {
-            logger.error("Error retrieving all users: {}", e.getMessage(), e);
-            return new ResponseEntity<>(new ApiResponse<>(false, "Error retrieving users: " + e.getMessage(), null), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
+	@GetMapping
+	public ResponseEntity<ApiResponse<PaginationResponse<UserResponse>>> getAllUsers(
+			@RequestParam(defaultValue = "1") int page,
+			@RequestParam(defaultValue = "10") int limit,
+			@RequestParam(defaultValue = "createdAt") String sortBy,
+			@RequestParam(defaultValue = "asc") String sortDir) {
+		try {
+			PaginationResponse<UserResponse> users = userService.getAllUsers(page, limit, sortBy, sortDir);
+			return new ResponseEntity<>(new ApiResponse<>(true, "Users retrieved successfully", users), HttpStatus.OK);
+		} catch (Exception e) {
+			logger.error("Error retrieving all users: {}", e.getMessage(), e);
+			return new ResponseEntity<>(new ApiResponse<>(false, "Error retrieving users: " + e.getMessage(), null),
+					HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
 
-    @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<UserResponse>> getUserById(@PathVariable UUID id) {
-        try {
-            ApiResponse<UserResponse> serviceResponse = userService.getUserById(id);
-            return new ResponseEntity<>(serviceResponse, HttpStatus.OK);
-        } catch (Exception e) {
-            logger.error("Error retrieving user by ID {}: {}", id, e.getMessage(), e);
-            return new ResponseEntity<>(new ApiResponse<>(false, "Error retrieving user: " + e.getMessage(), null), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
+	@GetMapping("/{id}")
+	public ResponseEntity<ApiResponse<UserResponse>> getUserById(@PathVariable UUID id) {
+		try {
+			ApiResponse<UserResponse> serviceResponse = userService.getUserById(id);
+			return new ResponseEntity<>(serviceResponse, HttpStatus.OK);
+		} catch (Exception e) {
+			logger.error("Error retrieving user by ID {}: {}", id, e.getMessage(), e);
+			return new ResponseEntity<>(new ApiResponse<>(false, "Error retrieving user: " + e.getMessage(), null),
+					HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
 
-    @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<UserResponse>> updateUser(@PathVariable UUID id, @Valid @RequestBody UserRequest userRequest) {
-        try {
-            ApiResponse<UserResponse> serviceResponse = userService.updateUser(id, userRequest);
-            return new ResponseEntity<>(serviceResponse, HttpStatus.OK);
-        } catch (Exception e) {
-            logger.error("Error updating user with ID {}: {}", id, e.getMessage(), e);
-            return new ResponseEntity<>(new ApiResponse<>(false, "Error updating user: " + e.getMessage(), null), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
+	@PutMapping("/{id}")
+	public ResponseEntity<ApiResponse<UserResponse>> updateUser(@PathVariable UUID id,
+			@Valid @RequestBody UserRequest userRequest) {
+		try {
+			ApiResponse<UserResponse> serviceResponse = userService.updateUser(id, userRequest);
+			return new ResponseEntity<>(serviceResponse, HttpStatus.OK);
+		} catch (Exception e) {
+			logger.error("Error updating user with ID {}: {}", id, e.getMessage(), e);
+			return new ResponseEntity<>(new ApiResponse<>(false, "Error updating user: " + e.getMessage(), null),
+					HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<UserResponse>> deleteUser(@PathVariable UUID id) {
-        try {
-            ApiResponse<UserResponse> serviceResponse = userService.deleteUser(id);
-            return new ResponseEntity<>(serviceResponse, HttpStatus.OK);
-        } catch (Exception e) {
-            logger.error("Error deleting user with ID {}: {}", id, e.getMessage(), e);
-            return new ResponseEntity<>(new ApiResponse<>(false, "Error deleting user: " + e.getMessage(), null), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
+	@DeleteMapping("/{id}")
+	public ResponseEntity<ApiResponse<UserResponse>> deleteUser(@PathVariable UUID id) {
+		try {
+			ApiResponse<UserResponse> serviceResponse = userService.deleteUser(id);
+			return new ResponseEntity<>(serviceResponse, HttpStatus.OK);
+		} catch (Exception e) {
+			logger.error("Error deleting user with ID {}: {}", id, e.getMessage(), e);
+			return new ResponseEntity<>(new ApiResponse<>(false, "Error deleting user: " + e.getMessage(), null),
+					HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
 }
