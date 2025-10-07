@@ -105,6 +105,7 @@ public class EventService {
             event.setStartDate(eventRequest.getStartDate());
             event.setEndDate(eventRequest.getEndDate());
             event.setCreatedBy(eventRequest.getCreatedBy());
+            event.setImageUrl(eventRequest.getImageUrl());
             event.setCreatedAt(LocalDateTime.now());
             Event savedEvent = eventRepository.save(event);
             auditService.publishAudit(savedEvent, "CREATE");
@@ -125,6 +126,7 @@ public class EventService {
                         existingEvent.setLocation(eventRequest.getLocation());
                         existingEvent.setStartDate(eventRequest.getStartDate());
                         existingEvent.setEndDate(eventRequest.getEndDate());
+                        existingEvent.setImageUrl(eventRequest.getImageUrl());
                         existingEvent.setUpdatedBy(eventRequest.getUpdatedBy());
                         existingEvent.setUpdatedAt(LocalDateTime.now());
                         Event updatedEvent = eventRepository.save(existingEvent);
@@ -166,6 +168,7 @@ public class EventService {
         eventResponse.setCreatedBy(event.getCreatedBy());
         eventResponse.setUpdatedAt(event.getUpdatedAt());
         eventResponse.setUpdatedBy(event.getUpdatedBy());
+        eventResponse.setImageUrl(event.getImageUrl());
         return eventResponse;
     }
 }

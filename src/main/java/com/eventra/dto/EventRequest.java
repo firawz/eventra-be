@@ -32,4 +32,5 @@ public class EventRequest {
 
     private String createdBy;
     private String updatedBy;
+    private String imageUrl;
 }

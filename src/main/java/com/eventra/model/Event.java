@@ -51,6 +51,9 @@ public class Event {
     @JoinColumn(name = "user_id", nullable = true) // user_id as foreign key, optional
     private User user;
 
+    @Column(name = "ImageUrl")
+    private String imageUrl;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
