@@ -1,12 +1,20 @@
 package com.eventra.service;
 
 import com.eventra.dto.ApiResponse;
+import com.eventra.dto.RegisterRequest;
 import com.eventra.dto.UserRequest;
+import com.eventra.dto.PaginationResponse;
 import com.eventra.dto.UserResponse;
 import com.eventra.exception.ResourceNotFoundException;
+import com.eventra.model.Role;
 import com.eventra.model.User;
 import com.eventra.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import com.eventra.service.AuditService;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -14,96 +22,153 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import org.springframework.data.domain.Sort;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.springframework.transaction.annotation.Transactional; // Added import
+import java.util.Optional; // Import Optional
 
 @Service
 public class UserService {
 
-    @Autowired
-    private UserRepository userRepository;
+	private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+	@Autowired
+	private UserRepository userRepository;
 
-    public ApiResponse<UserResponse> registerUser(UserRequest userRequest) {
-        if (userRepository.findByEmail(userRequest.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("Email already registered");
-        }
+	@Autowired
+	private PasswordEncoder passwordEncoder;
+	
+	@Autowired
+    private AuditService auditService;
 
-        User user = new User();
-        user.setFullName(userRequest.getFullName());
-        user.setEmail(userRequest.getEmail());
-        user.setPhone(userRequest.getPhone());
-        user.setPassword(passwordEncoder.encode(userRequest.getPassword()));
-        user.setRole(userRequest.getRole());
-        user.setGender(userRequest.getGender());
-        user.setNik(userRequest.getNik());
-        user.setCreatedAt(LocalDateTime.now());
-        user.setIsRegistered(true); // Assuming registration means it's registered
+	@Transactional // Added Transactional annotation
+	public ApiResponse<UserResponse> registerUser(RegisterRequest registerRequest) {
+		try {
 
-        User savedUser = userRepository.save(user);
-        return new ApiResponse<>(true, "User created successfully", mapUserToUserResponse(savedUser));
-    }
+			if (userRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
+				throw new IllegalArgumentException("Email already registered");
+			}
 
-    public ApiResponse<List<UserResponse>> getAllUsers(String sortBy, String sortDir) {
-        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
-        List<UserResponse> users = userRepository.findAll(sort).stream()
-                .map(this::mapUserToUserResponse)
-                .collect(Collectors.toList());
-        return new ApiResponse<>(true, "Users retrieved successfully", users);
-    }
+			if (registerRequest.getNik() != null && userRepository.findByNik(registerRequest.getNik()).isPresent()) {
+				throw new IllegalArgumentException("NIK already registered");
+			}
 
-    public ApiResponse<List<UserResponse>> getAllUsers() {
-        List<UserResponse> users = userRepository.findAll().stream()
-                .map(this::mapUserToUserResponse)
-                .collect(Collectors.toList());
-        return new ApiResponse<>(true, "Users retrieved successfully", users);
-    }
+			User newUser = createUserFromRegisterRequest(registerRequest);
+			User savedUser = userRepository.save(newUser);
+			auditService.publishAudit(savedUser, "CREATE");
 
-    public ApiResponse<UserResponse> getUserById(UUID id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + id));
-        return new ApiResponse<>(true, "User retrieved successfully", mapUserToUserResponse(user));
-    }
+			return new ApiResponse<>(true, "User created successfully", mapUserToUserResponse(savedUser));
+		} catch (Exception e) {
+			System.err.println("Error during user registration: " + e.getMessage()); // Changed to System.err
+			e.printStackTrace(); // Print full stack trace for detailed debugging
+			return new ApiResponse<>(false, e.getMessage(), null);
+		}
+	}
 
-    public ApiResponse<UserResponse> updateUser(UUID id, UserRequest userRequest) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + id));
+	public Optional<User> getUserByEmail(String email) {
+		return userRepository.findByEmail(email);
+	}
 
-        user.setFullName(userRequest.getFullName());
-        user.setEmail(userRequest.getEmail());
-        user.setPhone(userRequest.getPhone());
-        // Only update password if a new one is provided
-        if (userRequest.getPassword() != null && !userRequest.getPassword().isEmpty()) {
-            user.setPassword(passwordEncoder.encode(userRequest.getPassword()));
-        }
-        user.setRole(userRequest.getRole());
-        user.setGender(userRequest.getGender());
-        user.setNik(userRequest.getNik());
+	private User createUserFromRegisterRequest(RegisterRequest registerRequest) {
+		User user = new User();
+		user.setFullName(registerRequest.getFullName());
+		user.setEmail(registerRequest.getEmail());
+		user.setPhone(registerRequest.getPhone());
+		user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
+		user.setRole(registerRequest.getRole() != null ? registerRequest.getRole() : Role.USER.name());
+		user.setGender(registerRequest.getGender());
+		user.setNik(registerRequest.getNik());
+		user.setCreatedAt(LocalDateTime.now());
+		user.setIsRegistered(true);
+		return user;
+	}
 
-        User updatedUser = userRepository.save(user);
-        return new ApiResponse<>(true, "User updated successfully", mapUserToUserResponse(updatedUser));
-    }
+	public PaginationResponse<UserResponse> getAllUsers(int page, int limit, String sortBy, String sortDir) {
+		try {
+			Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending()
+					: Sort.by(sortBy).descending();
+			Pageable pageable = PageRequest.of(page - 1, limit, sort);
+			Page<User> userPage = userRepository.findAll(pageable);
 
-    public ApiResponse<UserResponse> deleteUser(UUID id) {
-        if (!userRepository.existsById(id)) {
-            throw new IllegalArgumentException("User not found with ID: " + id);
-        }
-        userRepository.deleteById(id);
-        return new ApiResponse<>(true, "User deleted successfully", null);
-    }
+			List<UserResponse> content = userPage.getContent().stream()
+					.map(this::mapUserToUserResponse)
+					.collect(Collectors.toList());
 
-    private UserResponse mapUserToUserResponse(User user) {
-        UserResponse userResponse = new UserResponse();
-        userResponse.setId(user.getId());
-        userResponse.setFullName(user.getFullName());
-        userResponse.setEmail(user.getEmail());
-        userResponse.setPhone(user.getPhone());
-        userResponse.setRole(user.getRole());
-        userResponse.setCreatedAt(user.getCreatedAt());
-        userResponse.setGender(user.getGender());
-        userResponse.setNik(user.getNik());
-        userResponse.setIsRegistered(user.getIsRegistered());
-        return userResponse;
-    }
+			return new PaginationResponse<>(
+					content,
+					userPage.getNumber() + 1,
+					userPage.getSize(),
+					userPage.getTotalElements(),
+					userPage.getTotalPages(),
+					userPage.isLast());
+		} catch (Exception e) {
+			logger.error("Error retrieving all users: {}", e.getMessage(), e);
+			throw new RuntimeException("Error retrieving all users: " + e.getMessage());
+		}
+	}
+
+	public ApiResponse<UserResponse> getUserById(UUID id) {
+		try {
+			User user = userRepository.findById(id)
+					.orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + id));
+			return new ApiResponse<>(true, "User retrieved successfully", mapUserToUserResponse(user));
+		} catch (Exception e) {
+			logger.error("Error retrieving user by ID {}: {}", id, e.getMessage(), e);
+			throw new RuntimeException("Error retrieving user by ID: " + e.getMessage());
+		}
+	}
+
+	public ApiResponse<UserResponse> updateUser(UUID id, UserRequest userRequest) {
+		try {
+			User user = userRepository.findById(id)
+					.orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + id));
+
+			user.setFullName(userRequest.getFullName());
+			user.setEmail(userRequest.getEmail());
+			user.setPhone(userRequest.getPhone());
+			// Only update password if a new one is provided
+			if (userRequest.getPassword() != null && !userRequest.getPassword().isEmpty()) {
+				user.setPassword(passwordEncoder.encode(userRequest.getPassword()));
+			}
+			user.setRole(userRequest.getRole() != null ? userRequest.getRole() : user.getRole()); // Keep existing role if
+																									// not provided
+			user.setGender(userRequest.getGender());
+			user.setNik(userRequest.getNik());
+
+			User updatedUser = userRepository.save(user);
+			auditService.publishAudit(updatedUser, "UPDATE");
+			return new ApiResponse<>(true, "User updated successfully", mapUserToUserResponse(updatedUser));
+		} catch (Exception e) {
+			logger.error("Error updating user with ID {}: {}", id, e.getMessage(), e);
+			throw new RuntimeException("Error updating user: " + e.getMessage());
+		}
+	}
+
+	public ApiResponse<UserResponse> deleteUser(UUID id) {
+		try {
+			User userToDelete = userRepository.findById(id)
+					.orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + id));
+			userRepository.deleteById(id);
+			auditService.publishAudit(userToDelete, "DELETE");
+			return new ApiResponse<>(true, "User deleted successfully", null);
+		} catch (Exception e) {
+			logger.error("Error deleting user with ID {}: {}", id, e.getMessage(), e);
+			throw new RuntimeException("Error deleting user: " + e.getMessage());
+		}
+	}
+
+	private UserResponse mapUserToUserResponse(User user) {
+		UserResponse userResponse = new UserResponse();
+		userResponse.setId(user.getId());
+		userResponse.setFullName(user.getFullName());
+		userResponse.setEmail(user.getEmail());
+		userResponse.setPhone(user.getPhone());
+		userResponse.setRole(user.getRole());
+		userResponse.setCreatedAt(user.getCreatedAt());
+		userResponse.setGender(user.getGender());
+		userResponse.setNik(user.getNik());
+		userResponse.setIsRegistered(user.getIsRegistered());
+		return userResponse;
+	}
 }

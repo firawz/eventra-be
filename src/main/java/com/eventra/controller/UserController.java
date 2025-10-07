@@ -1,6 +1,7 @@
 package com.eventra.controller;
 
 import com.eventra.dto.ApiResponse;
+import com.eventra.dto.PaginationResponse;
 import com.eventra.dto.UserRequest;
 import com.eventra.dto.UserResponse;
 import com.eventra.service.UserService;
@@ -10,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
 
@@ -17,39 +20,61 @@ import java.util.UUID;
 @RequestMapping("/api/users")
 public class UserController {
 
-    @Autowired
-    private UserService userService;
+	private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
-    @PostMapping
-    public ResponseEntity<ApiResponse<UserResponse>> createUser(@Valid @RequestBody UserRequest userRequest) {
-        ApiResponse<UserResponse> serviceResponse = userService.registerUser(userRequest);
-        return new ResponseEntity<>(serviceResponse, HttpStatus.CREATED);
-    }
+	@Autowired
+	private UserService userService;
 
-    @GetMapping
-    public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers(
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir
-    ) {
-        ApiResponse<List<UserResponse>> serviceResponse = userService.getAllUsers(sortBy, sortDir);
-        return new ResponseEntity<>(serviceResponse, HttpStatus.OK);
-    }
+	@GetMapping
+	public ResponseEntity<ApiResponse<PaginationResponse<UserResponse>>> getAllUsers(
+			@RequestParam(defaultValue = "1") int page,
+			@RequestParam(defaultValue = "10") int limit,
+			@RequestParam(defaultValue = "createdAt") String sortBy,
+			@RequestParam(defaultValue = "asc") String sortDir) {
+		try {
+			PaginationResponse<UserResponse> users = userService.getAllUsers(page, limit, sortBy, sortDir);
+			return new ResponseEntity<>(new ApiResponse<>(true, "Users retrieved successfully", users), HttpStatus.OK);
+		} catch (Exception e) {
+			logger.error("Error retrieving all users: {}", e.getMessage(), e);
+			return new ResponseEntity<>(new ApiResponse<>(false, "Error retrieving users: " + e.getMessage(), null),
+					HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
 
-    @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<UserResponse>> getUserById(@PathVariable UUID id) {
-        ApiResponse<UserResponse> serviceResponse = userService.getUserById(id);
-        return new ResponseEntity<>(serviceResponse, HttpStatus.OK);
-    }
+	@GetMapping("/{id}")
+	public ResponseEntity<ApiResponse<UserResponse>> getUserById(@PathVariable UUID id) {
+		try {
+			ApiResponse<UserResponse> serviceResponse = userService.getUserById(id);
+			return new ResponseEntity<>(serviceResponse, HttpStatus.OK);
+		} catch (Exception e) {
+			logger.error("Error retrieving user by ID {}: {}", id, e.getMessage(), e);
+			return new ResponseEntity<>(new ApiResponse<>(false, "Error retrieving user: " + e.getMessage(), null),
+					HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
 
-    @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<UserResponse>> updateUser(@PathVariable UUID id, @Valid @RequestBody UserRequest userRequest) {
-        ApiResponse<UserResponse> serviceResponse = userService.updateUser(id, userRequest);
-        return new ResponseEntity<>(serviceResponse, HttpStatus.OK);
-    }
+	@PutMapping("/{id}")
+	public ResponseEntity<ApiResponse<UserResponse>> updateUser(@PathVariable UUID id,
+			@Valid @RequestBody UserRequest userRequest) {
+		try {
+			ApiResponse<UserResponse> serviceResponse = userService.updateUser(id, userRequest);
+			return new ResponseEntity<>(serviceResponse, HttpStatus.OK);
+		} catch (Exception e) {
+			logger.error("Error updating user with ID {}: {}", id, e.getMessage(), e);
+			return new ResponseEntity<>(new ApiResponse<>(false, "Error updating user: " + e.getMessage(), null),
+					HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<UserResponse>> deleteUser(@PathVariable UUID id) {
-        ApiResponse<UserResponse> serviceResponse = userService.deleteUser(id);
-        return new ResponseEntity<>(serviceResponse, HttpStatus.OK);
-    }
+	@DeleteMapping("/{id}")
+	public ResponseEntity<ApiResponse<UserResponse>> deleteUser(@PathVariable UUID id) {
+		try {
+			ApiResponse<UserResponse> serviceResponse = userService.deleteUser(id);
+			return new ResponseEntity<>(serviceResponse, HttpStatus.OK);
+		} catch (Exception e) {
+			logger.error("Error deleting user with ID {}: {}", id, e.getMessage(), e);
+			return new ResponseEntity<>(new ApiResponse<>(false, "Error deleting user: " + e.getMessage(), null),
+					HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
 }

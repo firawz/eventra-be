@@ -5,6 +5,9 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+
+import org.hibernate.annotations.UuidGenerator;
+
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -17,7 +20,7 @@ import lombok.AllArgsConstructor;
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+	@GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "Id", updatable = false, nullable = false)
     private UUID id;
 
@@ -34,7 +37,7 @@ public class User {
     private String password;
 
     @Column(name = "Role", nullable = false)
-    private String role; // e.g., "ADMIN", "USER"
+    private String role;
 
     @Column(name = "CreatedAt", nullable = false)
     private LocalDateTime createdAt;

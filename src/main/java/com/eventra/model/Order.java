@@ -22,8 +22,7 @@ public class Order {
     private Set<OrderDetail> OrderDetails = new HashSet<>();
 
     @Id
-    @GeneratedValue(generator = "uuid2")
-    @GenericGenerator(name = "uuid2", strategy = "uuid2")
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "Id", updatable = false, nullable = false)
     private UUID id;
 
