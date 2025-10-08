@@ -13,8 +13,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +38,7 @@ public class EventService {
 
     public PaginationResponse<EventResponse> getAllEvents(
             int page, int limit,
-            String title, String description, String sortByDate) {
+            String title, String description, String category, String status, String sortByDate) {
         try {
             Sort sort = Sort.by("createdAt").descending(); // Default sort
             if (sortByDate != null && !sortByDate.isEmpty()) {
@@ -60,6 +59,12 @@ public class EventService {
                 }
                 if (description != null && !description.isEmpty()) {
                     predicates.add(cb.like(cb.lower(root.get("description")), "%" + description.toLowerCase() + "%"));
+                }
+                if (category != null && !category.isEmpty()) {
+                    predicates.add(cb.equal(cb.lower(root.get("category")), category.toLowerCase()));
+                }
+                if (status != null && !status.isEmpty()) {
+                    predicates.add(cb.equal(cb.lower(root.get("status")), status.toLowerCase()));
                 }
 
                 return cb.and(predicates.toArray(new Predicate[0]));
@@ -106,7 +111,10 @@ public class EventService {
             event.setEndDate(eventRequest.getEndDate());
             event.setCreatedBy(eventRequest.getCreatedBy());
             event.setImageUrl(eventRequest.getImageUrl());
-            event.setCreatedAt(LocalDateTime.now());
+            event.setCapacity(eventRequest.getCapacity());
+            event.setCategory(eventRequest.getCategory());
+            event.setStatus(eventRequest.getStatus());
+            event.setCreatedAt(OffsetDateTime.now());
             Event savedEvent = eventRepository.save(event);
             auditService.publishAudit(savedEvent, "CREATE");
             return convertToDto(savedEvent);
@@ -127,8 +135,11 @@ public class EventService {
                         existingEvent.setStartDate(eventRequest.getStartDate());
                         existingEvent.setEndDate(eventRequest.getEndDate());
                         existingEvent.setImageUrl(eventRequest.getImageUrl());
+                        existingEvent.setCapacity(eventRequest.getCapacity());
+                        existingEvent.setCategory(eventRequest.getCategory());
+                        existingEvent.setStatus(eventRequest.getStatus());
                         existingEvent.setUpdatedBy(eventRequest.getUpdatedBy());
-                        existingEvent.setUpdatedAt(LocalDateTime.now());
+                        existingEvent.setUpdatedAt(OffsetDateTime.now());
                         Event updatedEvent = eventRepository.save(existingEvent);
                         auditService.publishAudit(updatedEvent, "UPDATE");
                         return convertToDto(updatedEvent);
@@ -169,6 +180,9 @@ public class EventService {
         eventResponse.setUpdatedAt(event.getUpdatedAt());
         eventResponse.setUpdatedBy(event.getUpdatedBy());
         eventResponse.setImageUrl(event.getImageUrl());
+        eventResponse.setCapacity(event.getCapacity());
+        eventResponse.setCategory(event.getCategory());
+        eventResponse.setStatus(event.getStatus());
         return eventResponse;
     }
 }

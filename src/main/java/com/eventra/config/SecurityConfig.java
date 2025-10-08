@@ -38,8 +38,8 @@ public class SecurityConfig {
     private final AccessDeniedHandler customAccessDeniedHandler;
 
     public SecurityConfig(CustomUserDetailsService customUserDetailsService,
-                          AuthenticationEntryPoint jwtAuthenticationEntryPoint,
-                          AccessDeniedHandler customAccessDeniedHandler) {
+		AuthenticationEntryPoint jwtAuthenticationEntryPoint,
+		AccessDeniedHandler customAccessDeniedHandler) {
         this.customUserDetailsService = customUserDetailsService;
         this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
         this.customAccessDeniedHandler = customAccessDeniedHandler;

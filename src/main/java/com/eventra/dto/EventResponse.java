@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Data
@@ -15,11 +15,14 @@ public class EventResponse {
     private String title;
     private String description;
     private String location;
-    private LocalDateTime startDate;
-    private LocalDateTime endDate;
-    private LocalDateTime createdAt;
+    private OffsetDateTime startDate;
+    private OffsetDateTime endDate;
+    private OffsetDateTime createdAt;
     private String createdBy;
-    private LocalDateTime updatedAt;
+    private OffsetDateTime updatedAt;
     private String updatedBy;
     private String imageUrl;
+    private Integer capacity;
+    private String category;
+    private String status;
 }

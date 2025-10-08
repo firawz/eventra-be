@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Data
@@ -30,19 +30,19 @@ public class Event {
     private String location;
 
     @Column(name = "StartDate", nullable = false)
-    private LocalDateTime startDate;
+    private OffsetDateTime startDate;
 
     @Column(name = "EndDate", nullable = false)
-    private LocalDateTime endDate;
+    private OffsetDateTime endDate;
 
     @Column(name = "CreatedAt", updatable = false)
-    private LocalDateTime createdAt;
+    private OffsetDateTime createdAt;
 
     @Column(name = "CreatedBy")
     private String createdBy;
 
     @Column(name = "UpdatedAt")
-    private LocalDateTime updatedAt;
+    private OffsetDateTime updatedAt;
 
     @Column(name = "UpdatedBy")
     private String updatedBy;
@@ -54,13 +54,22 @@ public class Event {
     @Column(name = "ImageUrl")
     private String imageUrl;
 
+    @Column(nullable = false)
+    private Integer capacity;
+
+    @Column(nullable = false)
+    private String category;
+
+    @Column(nullable = false)
+    private String status;
+
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = OffsetDateTime.now();
     }
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = OffsetDateTime.now();
     }
 }

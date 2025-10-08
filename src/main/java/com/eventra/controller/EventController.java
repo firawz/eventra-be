@@ -31,9 +31,11 @@ public class EventController {
             @RequestParam(defaultValue = "10") int limit,
             @RequestParam(required = false) String title,
             @RequestParam(required = false) String description,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String status,
             @RequestParam(required = false) String sortByDate) {
         try {
-            PaginationResponse<EventResponse> events = eventService.getAllEvents(page, limit, title, description, sortByDate);
+            PaginationResponse<EventResponse> events = eventService.getAllEvents(page, limit, title, description, category, status, sortByDate);
             return ResponseEntity.ok(new ApiResponse<>(true, "Events retrieved successfully", events));
         } catch (Exception e) {
             logger.error("Error retrieving all events: {}", e.getMessage(), e);

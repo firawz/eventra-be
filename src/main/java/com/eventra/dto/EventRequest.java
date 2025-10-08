@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Data
 @AllArgsConstructor
@@ -22,15 +22,22 @@ public class EventRequest {
     @NotBlank(message = "Location cannot be empty")
     private String location;
 
-    @JsonFormat(pattern = "dd/MM/yyyy HH:mm")
     @NotNull(message = "Start date cannot be null")
-    private LocalDateTime startDate;
+    private OffsetDateTime startDate;
 
-    @JsonFormat(pattern = "dd/MM/yyyy HH:mm")
     @NotNull(message = "End date cannot be null")
-    private LocalDateTime endDate;
+    private OffsetDateTime endDate;
 
     private String createdBy;
     private String updatedBy;
     private String imageUrl;
+
+    @NotNull(message = "Capacity cannot be null")
+    private Integer capacity;
+
+    @NotBlank(message = "Category cannot be empty")
+    private String category;
+
+    @NotBlank(message = "Status cannot be empty")
+    private String status;
 }
