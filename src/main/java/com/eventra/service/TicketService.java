@@ -164,12 +164,6 @@ public class TicketService {
         TicketResponse response = new TicketResponse();
         response.setId(ticket.getId());
         
-        EventResponse eventResponse = new EventResponse();
-        eventResponse.setId(ticket.getEvent().getId());
-        eventResponse.setTitle(ticket.getEvent().getTitle()); // Use getTitle() instead of getName()
-        // Copy other relevant fields from Event to EventResponse if needed
-        response.setEvent(eventResponse);
-
         response.setTicketCategory(ticket.getTicketCategory());
         response.setPrice(ticket.getPrice());
         response.setQuota(ticket.getQuota());
@@ -178,5 +172,17 @@ public class TicketService {
         response.setUpdatedAt(ticket.getUpdatedAt());
         response.setUpdatedBy(ticket.getUpdatedBy());
         return response;
+    }
+
+    public List<TicketResponse> getTicketsByEventId(UUID eventId) {
+        try {
+            List<Ticket> tickets = ticketRepository.findByEventId(eventId);
+            return tickets.stream()
+                    .map(this::mapToResponse)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            logger.error("Error retrieving tickets for event ID {}: {}", eventId, e.getMessage(), e);
+            throw new RuntimeException("Error retrieving tickets for event: " + e.getMessage());
+        }
     }
 }

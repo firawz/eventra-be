@@ -7,6 +7,7 @@ import com.eventra.model.Event;
 import com.eventra.repository.EventRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.eventra.dto.TicketRequest;
+import com.eventra.dto.TicketResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -228,6 +229,11 @@ public class EventService {
         eventResponse.setImageUrl(event.getImageUrl());
         eventResponse.setCategory(event.getCategory());
         eventResponse.setStatus(event.getStatus());
+
+        // Fetch and convert tickets
+        List<TicketResponse> ticketResponses = ticketService.getTicketsByEventId(event.getId());
+        eventResponse.setTickets(ticketResponses);
+
         return eventResponse;
     }
 }

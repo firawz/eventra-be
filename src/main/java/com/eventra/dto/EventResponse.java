@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -24,4 +25,5 @@ public class EventResponse {
     private String imageUrl;
     private String category;
     private String status;
+    private List<TicketResponse> tickets;
 }
