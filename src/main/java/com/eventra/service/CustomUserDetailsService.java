@@ -4,6 +4,7 @@ import com.eventra.model.User;
 import com.eventra.repository.UserRepository;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import com.eventra.config.CustomUserDetails; // Import CustomUserDetails
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
@@ -55,8 +56,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         }
 
         User user = userOptional.orElseThrow(() -> new UsernameNotFoundException("User not found with identifier: " + identifier));
-
-        return new org.springframework.security.core.userdetails.User(user.getId().toString(), user.getPassword(), new ArrayList<>());
+        return new CustomUserDetails(user);
     }
 
     private boolean isValidUUID(String uuidString) {

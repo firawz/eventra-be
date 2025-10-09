@@ -53,4 +53,10 @@ public class OrderAudit {
 
     @Column(name = "UpdatedBy")
     private String updatedBy;
+
+    @Column(name = "DeletedBy")
+    private String deletedBy;
+
+    @Column(name = "DeletedAt")
+    private LocalDateTime deletedAt;
 }

@@ -18,6 +18,9 @@ import org.springframework.stereotype.Service;
 import com.eventra.service.AuditService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.eventra.config.CustomUserDetails;
 
 import java.util.List;
 import java.util.UUID;
@@ -45,11 +48,11 @@ public class OrderDetailServiceImpl implements OrderDetailService {
                     .FullName(orderDetailRequest.getFullName())
                     .BirthDate(orderDetailRequest.getBirthDate())
                     .TicketCode(orderDetailRequest.getTicketCode())
-                    .CreatedBy(orderDetailRequest.getCreatedBy())
+                    .CreatedBy(getCurrentAuditor()) // Set createdBy from security context
                     .build();
 
             OrderDetail savedOrderDetail = orderDetailRepository.save(orderDetail);
-            auditService.publishAudit(savedOrderDetail, "CREATE");
+            auditService.publishCreateAudit(savedOrderDetail, "CREATE"); // Use new audit method
             return mapToOrderDetailResponse(savedOrderDetail);
         } catch (ResourceNotFoundException e) {
             logger.warn("Resource not found during createOrderDetail: {}", e.getMessage());
@@ -113,10 +116,10 @@ public class OrderDetailServiceImpl implements OrderDetailService {
             existingOrderDetail.setFullName(orderDetailRequest.getFullName());
             existingOrderDetail.setBirthDate(orderDetailRequest.getBirthDate());
             existingOrderDetail.setTicketCode(orderDetailRequest.getTicketCode());
-            existingOrderDetail.setUpdatedBy(orderDetailRequest.getUpdatedBy());
+            existingOrderDetail.setUpdatedBy(getCurrentAuditor()); // Set updatedBy from security context
 
             OrderDetail updatedOrderDetail = orderDetailRepository.save(existingOrderDetail);
-            auditService.publishAudit(updatedOrderDetail, "UPDATE");
+            auditService.publishUpdateAudit(updatedOrderDetail, "UPDATE"); // Use new audit method
             return mapToOrderDetailResponse(updatedOrderDetail);
         } catch (ResourceNotFoundException e) {
             logger.warn("Resource not found during updateOrderDetail for ID {}: {}", id, e.getMessage());
@@ -133,7 +136,7 @@ public class OrderDetailServiceImpl implements OrderDetailService {
             OrderDetail orderDetail = orderDetailRepository.findById(id)
                     .orElseThrow(() -> new ResourceNotFoundException("OrderDetail not found with id " + id));
             orderDetailRepository.delete(orderDetail);
-            auditService.publishAudit(orderDetail, "DELETE");
+            auditService.publishDeleteAudit(orderDetail, "DELETE"); // Use new audit method
         } catch (ResourceNotFoundException e) {
             logger.warn("Resource not found during deleteOrderDetail for ID {}: {}", id, e.getMessage());
             throw e;
@@ -141,6 +144,21 @@ public class OrderDetailServiceImpl implements OrderDetailService {
             logger.error("Error deleting order detail with ID {}: {}", id, e.getMessage(), e);
             throw new RuntimeException("Error deleting order detail: " + e.getMessage());
         }
+    }
+
+    private String getCurrentAuditor() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getPrincipal())) {
+            Object principal = authentication.getPrincipal();
+            if (principal instanceof CustomUserDetails) {
+                CustomUserDetails customUserDetails = (CustomUserDetails) principal;
+                return customUserDetails.getUserId().toString();
+            } else {
+                logger.warn("Principal is not CustomUserDetails. Returning 'SYSTEM' for auditor.");
+                return "SYSTEM";
+            }
+        }
+        return "SYSTEM";
     }
 
     private OrderDetailResponse mapToOrderDetailResponse(OrderDetail orderDetail) {

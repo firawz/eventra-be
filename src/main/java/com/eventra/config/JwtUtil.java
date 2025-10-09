@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
+import com.eventra.model.User;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -27,8 +28,12 @@ public class JwtUtil {
     }
 
     public UUID extractUserId(String token) {
-        String userIdString = extractClaim(token, claims -> claims.get("id", String.class));
+        String userIdString = extractClaim(token, claims -> claims.get("sub", String.class)); // Subject is the user ID
         return UUID.fromString(userIdString);
+    }
+
+    public String extractEmail(String token) {
+        return extractClaim(token, claims -> claims.get("email", String.class));
     }
 
     public Date extractExpiration(String token) {
@@ -54,22 +59,25 @@ public class JwtUtil {
     }
 
     public Boolean validateToken(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+        final String email = extractEmail(token); // Extract email from token
+        return (email.equals(userDetails.getUsername()) && !isTokenExpired(token)); // Compare email with UserDetails' username (which is email)
     }
 
 
-    public String generateToken(UUID userId){
-        Map<String,Object> claims=new HashMap<>();
-        return createToken(claims,userId.toString());
+    public String generateToken(User user) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("role", user.getRole());
+        claims.put("full_name", user.getFullName());
+        claims.put("email", user.getEmail());
+        return createToken(claims, user.getId().toString());
     }
 
-    private String createToken(Map<String, Object> claims, String userName) {
+    private String createToken(Map<String, Object> claims, String subject) {
         return Jwts.builder()
                 .setClaims(claims)
-                .setSubject(userName)
+                .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis()+1000*60*30))
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 30))
                 .signWith(getSignKey(), SignatureAlgorithm.HS256).compact();
     }
 

@@ -10,6 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 import java.util.UUID;
@@ -56,9 +59,15 @@ public class EventController {
         }
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<ApiResponse<EventResponse>> createEvent(@Valid @RequestBody EventRequest eventRequest) {
         try {
+            // --- DEBUGGING LOG ---
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            logger.info("User '{}' attempting to create event with authorities: {}", authentication.getName(), authentication.getAuthorities());
+            // ---------------------
+
             EventResponse createdEvent = eventService.createEvent(eventRequest);
             return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>(true, "Event created successfully", createdEvent));
         } catch (Exception e) {
@@ -67,8 +76,9 @@ public class EventController {
         }
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<EventResponse>> updateEvent(@PathVariable UUID id, @Valid @RequestBody EventRequest eventRequest) {
+    public ResponseEntity<ApiResponse<EventResponse>> updateEvent(@PathVariable UUID id, @RequestBody EventRequest eventRequest) {
         try {
             return eventService.updateEvent(id, eventRequest)
                     .map(eventResponse -> ResponseEntity.ok(new ApiResponse<>(true, "Event updated successfully", eventResponse)))
