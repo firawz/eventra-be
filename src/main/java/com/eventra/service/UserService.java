@@ -160,10 +160,10 @@ public class UserService {
 
 	private UserResponse mapUserToUserResponse(User user) {
 		UserResponse userResponse = new UserResponse();
-		userResponse.setId(user.getId());
+		userResponse.setSub(user.getId()); // Edit : by Gilang change to sub
 		userResponse.setFullName(user.getFullName());
 		userResponse.setEmail(user.getEmail());
-		userResponse.setPhone(user.getPhone());
+		userResponse.setPhoneNumber(user.getPhone()); // Edit by : Gilang Changed to phoneNumber
 		userResponse.setRole(user.getRole());
 		userResponse.setCreatedAt(user.getCreatedAt());
 		userResponse.setGender(user.getGender());
