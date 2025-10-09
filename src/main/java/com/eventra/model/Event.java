@@ -55,9 +55,6 @@ public class Event {
     private String imageUrl;
 
     @Column(nullable = false)
-    private Integer capacity;
-
-    @Column(nullable = false)
     private String category;
 
     @Column(nullable = false)

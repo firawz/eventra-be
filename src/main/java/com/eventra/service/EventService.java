@@ -6,6 +6,7 @@ import com.eventra.dto.PaginationResponse;
 import com.eventra.model.Event;
 import com.eventra.repository.EventRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import com.eventra.dto.TicketRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -38,13 +39,16 @@ public class EventService {
     @Autowired
     private AuditService auditService;
 
+    @Autowired
+    private TicketService ticketService;
+
     private static final Logger logger = LoggerFactory.getLogger(EventService.class);
 
     public PaginationResponse<EventResponse> getAllEvents(
             int page, int limit,
             String title, String description, String category, String status, String sortByDate) {
         try {
-            Sort sort = Sort.by("createdAt").descending(); // Default sort
+            Sort sort = Sort.by("startDate").ascending(); // Default sort
             if (sortByDate != null && !sortByDate.isEmpty()) {
                 if (sortByDate.equalsIgnoreCase("asc")) {
                     sort = Sort.by("startDate").ascending();
@@ -114,13 +118,21 @@ public class EventService {
             event.setStartDate(eventRequest.getStartDate());
             event.setEndDate(eventRequest.getEndDate());
             event.setImageUrl(eventRequest.getImageUrl());
-            event.setCapacity(eventRequest.getCapacity());
             event.setCategory(eventRequest.getCategory());
             event.setStatus(eventRequest.getStatus());
             event.setCreatedAt(OffsetDateTime.now());
             event.setCreatedBy(getCurrentAuditor()); // Set createdBy from security context
             Event savedEvent = eventRepository.save(event);
             auditService.publishCreateAudit(savedEvent, "CREATE"); // Use new audit method
+
+            // Create tickets if provided
+            if (eventRequest.getTickets() != null && !eventRequest.getTickets().isEmpty()) {
+                for (TicketRequest ticketRequest : eventRequest.getTickets()) {
+                    ticketRequest.setEventId(savedEvent.getId()); // Associate ticket with the newly created event
+                    ticketService.createTicket(ticketRequest);
+                }
+            }
+
             return convertToDto(savedEvent);
         } catch (Exception e) {
             logger.error("Error creating event: {}", e.getMessage(), e);
@@ -150,9 +162,6 @@ public class EventService {
                         }
                         if (eventRequest.getImageUrl() != null) {
                             existingEvent.setImageUrl(eventRequest.getImageUrl());
-                        }
-                        if (eventRequest.getCapacity() != null) {
-                            existingEvent.setCapacity(eventRequest.getCapacity());
                         }
                         if (eventRequest.getCategory() != null) {
                             existingEvent.setCategory(eventRequest.getCategory());
@@ -217,7 +226,6 @@ public class EventService {
         eventResponse.setUpdatedAt(event.getUpdatedAt());
         eventResponse.setUpdatedBy(event.getUpdatedBy());
         eventResponse.setImageUrl(event.getImageUrl());
-        eventResponse.setCapacity(event.getCapacity());
         eventResponse.setCategory(event.getCategory());
         eventResponse.setStatus(event.getStatus());
         return eventResponse;

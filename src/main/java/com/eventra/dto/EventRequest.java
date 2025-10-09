@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.OffsetDateTime;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -32,12 +33,11 @@ public class EventRequest {
     private String updatedBy;
     private String imageUrl;
 
-    @NotNull(message = "Capacity cannot be null")
-    private Integer capacity;
-
     @NotBlank(message = "Category cannot be empty")
     private String category;
 
     @NotBlank(message = "Status cannot be empty")
     private String status;
+
+    private List<TicketRequest> tickets;
 }

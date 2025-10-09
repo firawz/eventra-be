@@ -5,12 +5,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import jakarta.persistence.*;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.UUID;
-
-import jakarta.persistence.*;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -33,7 +27,7 @@ public class Ticket {
     private String ticketCategory;
 
     @Column(name = "Price", nullable = false)
-    private BigDecimal price;
+    private Integer price;
 
     @Column(name = "Quota", nullable = false)
     private Integer quota;

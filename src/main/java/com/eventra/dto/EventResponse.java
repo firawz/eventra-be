@@ -22,7 +22,6 @@ public class EventResponse {
     private OffsetDateTime updatedAt;
     private String updatedBy;
     private String imageUrl;
-    private Integer capacity;
     private String category;
     private String status;
 }

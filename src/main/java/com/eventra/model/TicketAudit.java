@@ -6,7 +6,6 @@ import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.Getter;
@@ -44,7 +43,7 @@ public class TicketAudit {
     private String ticketCategory;
 
     @Column(name = "Price", nullable = false)
-    private BigDecimal price;
+    private Integer price;
 
     @Column(name = "Quota", nullable = false)
     private Integer quota;
