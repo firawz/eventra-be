@@ -42,6 +42,21 @@ public class User {
     @Column(name = "CreatedAt", nullable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "CreatedBy")
+    private String createdBy;
+
+    @Column(name = "UpdatedAt")
+    private LocalDateTime updatedAt;
+
+    @Column(name = "UpdatedBy")
+    private String updatedBy;
+
+    @Column(name = "DeletedAt")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "DeletedBy")
+    private String deletedBy;
+
     @Column(name = "Gender")
     private String gender; // e.g., "MALE", "FEMALE", "OTHER"
 
@@ -65,5 +80,10 @@ public class User {
         if (isRegistered == null) {
             isRegistered = false;
         }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 }

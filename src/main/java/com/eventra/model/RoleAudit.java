@@ -38,4 +38,16 @@ public class RoleAudit {
 
     @Column(name = "RoleName", nullable = false)
     private String roleName;
+
+    @Column(name = "UpdatedBy")
+    private String updatedBy;
+
+    @Column(name = "UpdatedAt")
+    private LocalDateTime updatedAt;
+
+    @Column(name = "DeletedBy")
+    private String deletedBy;
+
+    @Column(name = "DeletedAt")
+    private LocalDateTime deletedAt;
 }

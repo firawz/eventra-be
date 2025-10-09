@@ -32,6 +32,7 @@ com\eventra\service\impl\OrderServiceImpl.class
 com\eventra\config\JwtAuthenticationEntryPoint.class
 com\eventra\dto\UserResponse.class
 com\eventra\dto\JwtResponse.class
+com\eventra\event\AuditUpdatedEvent.class
 com\eventra\repository\OrderDetailAuditRepository.class
 com\eventra\dto\OrderDetailRequest.class
 com\eventra\dto\AuthResponse.class
@@ -49,9 +50,11 @@ com\eventra\repository\UserRepository.class
 com\eventra\repository\OrderDetailRepository.class
 com\eventra\dto\AuthRequest.class
 com\eventra\service\UserService.class
+com\eventra\event\AuditDeletedEvent.class
 com\eventra\repository\TicketRepository.class
 com\eventra\service\impl\AuditServiceImpl.class
 com\eventra\model\Role.class
+com\eventra\config\AuditEventListener$AuditType.class
 com\eventra\repository\TicketAuditRepository.class
 com\eventra\service\impl\OrderDetailServiceImpl.class
 com\eventra\service\OrderDetailService.class
@@ -59,6 +62,7 @@ com\eventra\dto\OrderRequest.class
 com\eventra\model\OrderDetailAudit.class
 com\eventra\config\BeanUtil.class
 com\eventra\repository\OrderRepository.class
+com\eventra\config\CustomUserDetails.class
 com\eventra\controller\UserController.class
 com\eventra\dto\RegisterRequest.class
 com\eventra\exception\ResourceNotFoundException.class

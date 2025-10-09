@@ -59,4 +59,16 @@ public class UserAudit {
 
     @Column(name = "IsRegistered", nullable = false)
     private Boolean isRegistered;
+
+    @Column(name = "UpdatedBy")
+    private String updatedBy;
+
+    @Column(name = "UpdatedAt")
+    private LocalDateTime updatedAt;
+
+    @Column(name = "DeletedBy")
+    private String deletedBy;
+
+    @Column(name = "DeletedAt")
+    private LocalDateTime deletedAt;
 }

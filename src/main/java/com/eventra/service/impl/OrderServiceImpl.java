@@ -20,6 +20,9 @@ import com.eventra.service.AuditService;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.eventra.config.CustomUserDetails;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -96,10 +99,10 @@ public class OrderServiceImpl implements OrderService {
             order.setStatus(orderRequest.getStatus());
             order.setTotalPrice(orderRequest.getTotalPrice());
             order.setCreatedAt(LocalDateTime.now());
-            order.setCreatedBy(orderRequest.getCreatedBy());
+            order.setCreatedBy(getCurrentAuditor()); // Set createdBy from security context
 
             Order savedOrder = orderRepository.save(order);
-            auditService.publishAudit(savedOrder, "CREATE");
+            auditService.publishCreateAudit(savedOrder, "CREATE"); // Use new audit method
             return convertToDto(savedOrder);
         } catch (ResourceNotFoundException e) {
             logger.warn("Resource not found during createOrder: {}", e.getMessage());
@@ -126,10 +129,10 @@ public class OrderServiceImpl implements OrderService {
             order.setStatus(orderRequest.getStatus());
             order.setTotalPrice(orderRequest.getTotalPrice());
             order.setUpdatedAt(LocalDateTime.now());
-            order.setUpdatedBy(orderRequest.getUpdatedBy());
+            order.setUpdatedBy(getCurrentAuditor()); // Set updatedBy from security context
 
             Order updatedOrder = orderRepository.save(order);
-            auditService.publishAudit(updatedOrder, "UPDATE");
+            auditService.publishUpdateAudit(updatedOrder, "UPDATE"); // Use new audit method
             return convertToDto(updatedOrder);
         } catch (ResourceNotFoundException e) {
             logger.warn("Resource not found during updateOrder for ID {}: {}", id, e.getMessage());
@@ -146,7 +149,7 @@ public class OrderServiceImpl implements OrderService {
             Order order = orderRepository.findById(id)
                     .orElseThrow(() -> new ResourceNotFoundException("Order not found with id " + id));
             orderRepository.delete(order);
-            auditService.publishAudit(order, "DELETE");
+            auditService.publishDeleteAudit(order, "DELETE"); // Use new audit method
         } catch (ResourceNotFoundException e) {
             logger.warn("Resource not found during deleteOrder for ID {}: {}", id, e.getMessage());
             throw e;
@@ -154,6 +157,21 @@ public class OrderServiceImpl implements OrderService {
             logger.error("Error deleting order with ID {}: {}", id, e.getMessage(), e);
             throw new RuntimeException("Error deleting order: " + e.getMessage());
         }
+    }
+
+    private String getCurrentAuditor() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getPrincipal())) {
+            Object principal = authentication.getPrincipal();
+            if (principal instanceof CustomUserDetails) {
+                CustomUserDetails customUserDetails = (CustomUserDetails) principal;
+                return customUserDetails.getUserId().toString();
+            } else {
+                logger.warn("Principal is not CustomUserDetails. Returning 'SYSTEM' for auditor.");
+                return "SYSTEM";
+            }
+        }
+        return "SYSTEM";
     }
 
     private OrderResponse convertToDto(Order order) {

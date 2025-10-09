@@ -57,6 +57,12 @@ public class EventAudit {
     @Column(name = "UpdatedBy")
     private String updatedBy;
 
+    @Column(name = "DeletedBy")
+    private String deletedBy;
+
+    @Column(name = "DeletedAt")
+    private LocalDateTime deletedAt;
+
     @Column(name = "user_id")
     private UUID userId;
 }

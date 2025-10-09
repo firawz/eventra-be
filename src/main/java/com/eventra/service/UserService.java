@@ -27,6 +27,9 @@ import org.slf4j.LoggerFactory;
 
 import org.springframework.transaction.annotation.Transactional; // Added import
 import java.util.Optional; // Import Optional
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.eventra.config.CustomUserDetails;
 
 @Service
 public class UserService {
@@ -56,7 +59,7 @@ public class UserService {
 
 			User newUser = createUserFromRegisterRequest(registerRequest);
 			User savedUser = userRepository.save(newUser);
-			auditService.publishAudit(savedUser, "CREATE");
+			auditService.publishCreateAudit(savedUser, "CREATE"); // Use new audit method
 
 			return new ApiResponse<>(true, "User created successfully", mapUserToUserResponse(savedUser));
 		} catch (Exception e) {
@@ -80,6 +83,7 @@ public class UserService {
 		user.setGender(registerRequest.getGender());
 		user.setNik(registerRequest.getNik());
 		user.setCreatedAt(LocalDateTime.now());
+		user.setCreatedBy(getCurrentAuditor()); // Set createdBy from security context
 		user.setIsRegistered(true);
 		return user;
 	}
@@ -135,9 +139,11 @@ public class UserService {
 																									// not provided
 			user.setGender(userRequest.getGender());
 			user.setNik(userRequest.getNik());
+			user.setUpdatedAt(LocalDateTime.now()); // Set updatedAt
+			user.setUpdatedBy(getCurrentAuditor()); // Set updatedBy from security context
 
 			User updatedUser = userRepository.save(user);
-			auditService.publishAudit(updatedUser, "UPDATE");
+			auditService.publishUpdateAudit(updatedUser, "UPDATE"); // Use new audit method
 			return new ApiResponse<>(true, "User updated successfully", mapUserToUserResponse(updatedUser));
 		} catch (Exception e) {
 			logger.error("Error updating user with ID {}: {}", id, e.getMessage(), e);
@@ -150,13 +156,28 @@ public class UserService {
 			User userToDelete = userRepository.findById(id)
 					.orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + id));
 			userRepository.deleteById(id);
-			auditService.publishAudit(userToDelete, "DELETE");
+			auditService.publishDeleteAudit(userToDelete, "DELETE"); // Use new audit method
 			return new ApiResponse<>(true, "User deleted successfully", null);
 		} catch (Exception e) {
 			logger.error("Error deleting user with ID {}: {}", id, e.getMessage(), e);
 			throw new RuntimeException("Error deleting user: " + e.getMessage());
 		}
 	}
+
+	private String getCurrentAuditor() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getPrincipal())) {
+            Object principal = authentication.getPrincipal();
+            if (principal instanceof CustomUserDetails) {
+                CustomUserDetails customUserDetails = (CustomUserDetails) principal;
+                return customUserDetails.getUserId().toString();
+            } else {
+                logger.warn("Principal is not CustomUserDetails. Returning 'SYSTEM' for auditor.");
+                return "SYSTEM";
+            }
+        }
+        return "SYSTEM";
+    }
 
 	private UserResponse mapUserToUserResponse(User user) {
 		UserResponse userResponse = new UserResponse();

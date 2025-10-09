@@ -24,6 +24,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.eventra.config.CustomUserDetails;
+import com.eventra.exception.ResourceNotFoundException;
 
 @Service
 public class EventService {
@@ -109,14 +113,14 @@ public class EventService {
             event.setLocation(eventRequest.getLocation());
             event.setStartDate(eventRequest.getStartDate());
             event.setEndDate(eventRequest.getEndDate());
-            event.setCreatedBy(eventRequest.getCreatedBy());
             event.setImageUrl(eventRequest.getImageUrl());
             event.setCapacity(eventRequest.getCapacity());
             event.setCategory(eventRequest.getCategory());
             event.setStatus(eventRequest.getStatus());
             event.setCreatedAt(OffsetDateTime.now());
+            event.setCreatedBy(getCurrentAuditor()); // Set createdBy from security context
             Event savedEvent = eventRepository.save(event);
-            auditService.publishAudit(savedEvent, "CREATE");
+            auditService.publishCreateAudit(savedEvent, "CREATE"); // Use new audit method
             return convertToDto(savedEvent);
         } catch (Exception e) {
             logger.error("Error creating event: {}", e.getMessage(), e);
@@ -129,19 +133,37 @@ public class EventService {
         try {
             return eventRepository.findById(id)
                     .map(existingEvent -> {
-                        existingEvent.setTitle(eventRequest.getTitle());
-                        existingEvent.setDescription(eventRequest.getDescription());
-                        existingEvent.setLocation(eventRequest.getLocation());
-                        existingEvent.setStartDate(eventRequest.getStartDate());
-                        existingEvent.setEndDate(eventRequest.getEndDate());
-                        existingEvent.setImageUrl(eventRequest.getImageUrl());
-                        existingEvent.setCapacity(eventRequest.getCapacity());
-                        existingEvent.setCategory(eventRequest.getCategory());
-                        existingEvent.setStatus(eventRequest.getStatus());
-                        existingEvent.setUpdatedBy(eventRequest.getUpdatedBy());
+                        if (eventRequest.getTitle() != null) {
+                            existingEvent.setTitle(eventRequest.getTitle());
+                        }
+                        if (eventRequest.getDescription() != null) {
+                            existingEvent.setDescription(eventRequest.getDescription());
+                        }
+                        if (eventRequest.getLocation() != null) {
+                            existingEvent.setLocation(eventRequest.getLocation());
+                        }
+                        if (eventRequest.getStartDate() != null) {
+                            existingEvent.setStartDate(eventRequest.getStartDate());
+                        }
+                        if (eventRequest.getEndDate() != null) {
+                            existingEvent.setEndDate(eventRequest.getEndDate());
+                        }
+                        if (eventRequest.getImageUrl() != null) {
+                            existingEvent.setImageUrl(eventRequest.getImageUrl());
+                        }
+                        if (eventRequest.getCapacity() != null) {
+                            existingEvent.setCapacity(eventRequest.getCapacity());
+                        }
+                        if (eventRequest.getCategory() != null) {
+                            existingEvent.setCategory(eventRequest.getCategory());
+                        }
+                        if (eventRequest.getStatus() != null) {
+                            existingEvent.setStatus(eventRequest.getStatus());
+                        }
                         existingEvent.setUpdatedAt(OffsetDateTime.now());
+                        existingEvent.setUpdatedBy(getCurrentAuditor()); // Set updatedBy from security context
                         Event updatedEvent = eventRepository.save(existingEvent);
-                        auditService.publishAudit(updatedEvent, "UPDATE");
+                        auditService.publishUpdateAudit(updatedEvent, "UPDATE"); // Use new audit method
                         return convertToDto(updatedEvent);
                     });
         } catch (Exception e) {
@@ -157,7 +179,7 @@ public class EventService {
             if (eventOptional.isPresent()) {
                 Event eventToDelete = eventOptional.get();
                 eventRepository.deleteById(id);
-                auditService.publishAudit(eventToDelete, "DELETE");
+                auditService.publishDeleteAudit(eventToDelete, "DELETE"); // Use new audit method
                 return true;
             }
             return false;
@@ -165,6 +187,21 @@ public class EventService {
             logger.error("Error deleting event with ID {}: {}", id, e.getMessage(), e);
             throw new RuntimeException("Error deleting event: " + e.getMessage());
         }
+    }
+
+    private String getCurrentAuditor() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getPrincipal())) {
+            Object principal = authentication.getPrincipal();
+            if (principal instanceof CustomUserDetails) {
+                CustomUserDetails customUserDetails = (CustomUserDetails) principal;
+                return customUserDetails.getUserId().toString();
+            } else {
+                logger.warn("Principal is not CustomUserDetails. Returning 'SYSTEM' for auditor.");
+                return "SYSTEM";
+            }
+        }
+        return "SYSTEM";
     }
 
     private EventResponse convertToDto(Event event) {

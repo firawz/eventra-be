@@ -66,6 +66,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/events/**").authenticated() // Allow authenticated users to create events
+                .requestMatchers(HttpMethod.PUT, "/api/events/**").authenticated() // Allow authenticated users to update events
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session

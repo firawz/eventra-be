@@ -50,7 +50,7 @@ public class AuthController {
                     throw new UsernameNotFoundException("User not found with email: " + authRequest.getEmail());
                 }
                 User user = userOptional.get();
-                String token = jwtUtil.generateToken( user.getId());
+                String token = jwtUtil.generateToken(user);
                 JwtResponse jwtResponse = new JwtResponse(token);
                 return new ResponseEntity<>(new ApiResponse<>(true, "Login Successful", jwtResponse), HttpStatus.OK);
             } else {

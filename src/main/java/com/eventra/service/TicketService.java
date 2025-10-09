@@ -21,6 +21,9 @@ import org.springframework.stereotype.Service;
 import com.eventra.service.AuditService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.eventra.config.CustomUserDetails;
 
 import java.util.List;
 import java.util.UUID;
@@ -50,11 +53,10 @@ public class TicketService {
             ticket.setTicketCategory(ticketRequest.getTicketCategory());
             ticket.setPrice(ticketRequest.getPrice());
             ticket.setQuota(ticketRequest.getQuota());
-            // Set createdBy from authenticated user if available
-            ticket.setCreatedBy("admin"); // Placeholder for now
+            ticket.setCreatedBy(getCurrentAuditor()); // Set createdBy from security context
 
             Ticket savedTicket = ticketRepository.save(ticket);
-            auditService.publishAudit(savedTicket, "CREATE");
+            auditService.publishCreateAudit(savedTicket, "CREATE"); // Use new audit method
             return mapToResponse(savedTicket);
         } catch (ResourceNotFoundException e) {
             logger.warn("Resource not found during createTicket: {}", e.getMessage());
@@ -114,11 +116,10 @@ public class TicketService {
             ticket.setTicketCategory(ticketRequest.getTicketCategory());
             ticket.setPrice(ticketRequest.getPrice());
             ticket.setQuota(ticketRequest.getQuota());
-            // Set updatedBy from authenticated user if available
-            ticket.setUpdatedBy("admin"); // Placeholder for now
+            ticket.setUpdatedBy(getCurrentAuditor()); // Set updatedBy from security context
 
             Ticket updatedTicket = ticketRepository.save(ticket);
-            auditService.publishAudit(updatedTicket, "UPDATE");
+            auditService.publishUpdateAudit(updatedTicket, "UPDATE"); // Use new audit method
             return mapToResponse(updatedTicket);
         } catch (ResourceNotFoundException e) {
             logger.warn("Resource not found during updateTicket for ID {}: {}", id, e.getMessage());
@@ -134,7 +135,7 @@ public class TicketService {
             Ticket ticket = ticketRepository.findById(id)
                     .orElseThrow(() -> new ResourceNotFoundException("Ticket not found with id " + id));
             ticketRepository.delete(ticket);
-            auditService.publishAudit(ticket, "DELETE");
+            auditService.publishDeleteAudit(ticket, "DELETE"); // Use new audit method
         } catch (ResourceNotFoundException e) {
             logger.warn("Resource not found during deleteTicket for ID {}: {}", id, e.getMessage());
             throw e;
@@ -142,6 +143,21 @@ public class TicketService {
             logger.error("Error deleting ticket with ID {}: {}", id, e.getMessage(), e);
             throw new RuntimeException("Error deleting ticket: " + e.getMessage());
         }
+    }
+
+    private String getCurrentAuditor() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getPrincipal())) {
+            Object principal = authentication.getPrincipal();
+            if (principal instanceof CustomUserDetails) {
+                CustomUserDetails customUserDetails = (CustomUserDetails) principal;
+                return customUserDetails.getUserId().toString();
+            } else {
+                logger.warn("Principal is not CustomUserDetails. Returning 'SYSTEM' for auditor.");
+                return "SYSTEM";
+            }
+        }
+        return "SYSTEM";
     }
 
     private TicketResponse mapToResponse(Ticket ticket) {
