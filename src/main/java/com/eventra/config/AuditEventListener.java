@@ -112,8 +112,8 @@ public class AuditEventListener {
                 eventAudit.setTitle(event.getTitle());
                 eventAudit.setDescription(event.getDescription());
                 eventAudit.setLocation(event.getLocation());
-                eventAudit.setStartDate(event.getStartDate());
-                eventAudit.setEndDate(event.getEndDate());
+                eventAudit.setStartDate(event.getStartDate().toLocalDateTime());
+                eventAudit.setEndDate(event.getEndDate().toLocalDateTime());
                 eventAudit.setUserId(event.getUser() != null ? event.getUser().getId() : null);
 
                 if (auditType == AuditType.CREATE) {
