@@ -66,6 +66,9 @@ public class User {
     @Column(name = "IsRegistered", nullable = false)
     private Boolean isRegistered;
 
+    @Column(name = "Wallet")
+    private Integer wallet;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Event> events;
 

@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -18,7 +19,7 @@ public class OrderDetailResponse {
     private UUID OrderId;
     private String Nik;
     private String FullName;
-    private LocalDateTime BirthDate;
+    private LocalDate BirthDate;
     private String TicketCode;
     private LocalDateTime CreatedAt;
     private String CreatedBy;

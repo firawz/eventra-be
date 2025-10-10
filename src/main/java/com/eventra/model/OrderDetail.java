@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 import jakarta.persistence.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -35,7 +36,7 @@ public class OrderDetail {
     private String FullName;
 
     @Column(name = "birth_date", nullable = false)
-    private LocalDateTime BirthDate;
+    private LocalDate BirthDate;
 
     @Column(name = "ticket_code", nullable = false)
     private String TicketCode;

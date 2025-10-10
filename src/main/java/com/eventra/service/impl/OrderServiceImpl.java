@@ -10,6 +10,7 @@ import com.eventra.model.User;
 import com.eventra.repository.EventRepository;
 import com.eventra.repository.OrderRepository;
 import com.eventra.repository.UserRepository;
+import com.eventra.service.OrderDetailService;
 import com.eventra.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -45,6 +46,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private AuditService auditService;
+
+    @Autowired
+    private OrderDetailService orderDetailService;
 
     @Override
     public PaginationResponse<OrderResponse> getAllOrders(int page, int limit) {
@@ -103,6 +107,17 @@ public class OrderServiceImpl implements OrderService {
 
             Order savedOrder = orderRepository.save(order);
             auditService.publishCreateAudit(savedOrder, "CREATE"); // Use new audit method
+			System.out.println(orderRequest+ " ini order request");
+			System.out.println(orderRequest.getOrderDetails()+ " ini order detail");
+            if (orderRequest.getOrderDetails() != null && !orderRequest.getOrderDetails().isEmpty()) {
+                orderRequest.getOrderDetails().forEach(detailRequest -> {
+					System.out.println(detailRequest+ " ini detail request");
+                    detailRequest.setOrderId(savedOrder.getId()); // Set the newly created order's ID
+                    detailRequest.setCreatedBy(getCurrentAuditor());
+                    orderDetailService.createOrderDetail(detailRequest);
+                });
+            }
+
             return convertToDto(savedOrder);
         } catch (ResourceNotFoundException e) {
             logger.warn("Resource not found during createOrder: {}", e.getMessage());

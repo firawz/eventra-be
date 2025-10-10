@@ -7,8 +7,10 @@ import lombok.NoArgsConstructor;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import java.time.LocalDateTime;
 import java.util.UUID;
+import java.time.LocalDate;
+import org.springframework.format.annotation.DateTimeFormat;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 @Data
 @Builder
@@ -16,8 +18,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class OrderDetailRequest {
 
-    @NotNull(message = "Order ID cannot be null")
-    private UUID OrderId;
+    private UUID orderId; // Will be set by the service
 
     @NotBlank(message = "NIK cannot be blank")
     private String Nik;
@@ -26,11 +27,10 @@ public class OrderDetailRequest {
     private String FullName;
 
     @NotNull(message = "Birth Date cannot be null")
-    private LocalDateTime BirthDate;
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate BirthDate;
 
-    @NotBlank(message = "Ticket Code cannot be blank")
-    private String TicketCode;
-
-    private String CreatedBy;
-    private String UpdatedBy;
+    private String createdBy;
+    private String updatedBy;
 }

@@ -23,8 +23,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import com.eventra.config.CustomUserDetails;
 
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.time.LocalDate;
+import java.time.LocalDateTime; // Keep LocalDateTime for CreatedAt/UpdatedAt
+import com.eventra.model.Event;
+import com.eventra.model.User;
 
 @Service
 @AllArgsConstructor
@@ -42,12 +47,30 @@ public class OrderDetailServiceImpl implements OrderDetailService {
             Order order = orderRepository.findById(orderDetailRequest.getOrderId())
                     .orElseThrow(() -> new ResourceNotFoundException("Order not found with id " + orderDetailRequest.getOrderId()));
 
+            // Retrieve Event and User from the Order
+            Event event = order.getEvent();
+            User user = order.getUser();
+
+            // Generate ticketCode
+            String eventTitlePrefix = event.getTitle().substring(0, Math.min(event.getTitle().length(), 2)).toUpperCase();
+            String randomNumber = generateRandomNumberString(6);
+            String userEmailPrefix = user.getEmail().substring(0, Math.min(user.getEmail().length(), 2)).toUpperCase();
+
+            String ticketCode = eventTitlePrefix + randomNumber + userEmailPrefix;
+
+            // Parse BirthDate string to LocalDateTime
+            // BirthDate is now LocalDate in OrderDetailRequest, no manual parsing needed if Spring handles it.
+            // However, if it's still a String in the request, we would parse it to LocalDate.
+            // Since OrderDetailRequest.BirthDate is now LocalDate, we can directly use it.
+            LocalDate birthDate = orderDetailRequest.getBirthDate();
+            logger.info("Received BirthDate: [{}]", birthDate);
+
             OrderDetail orderDetail = OrderDetail.builder()
                     .Order(order)
                     .Nik(orderDetailRequest.getNik())
                     .FullName(orderDetailRequest.getFullName())
-                    .BirthDate(orderDetailRequest.getBirthDate())
-                    .TicketCode(orderDetailRequest.getTicketCode())
+                    .BirthDate(birthDate) // Set the parsed LocalDateTime
+                    .TicketCode(ticketCode) // Set the generated ticketCode
                     .CreatedBy(getCurrentAuditor()) // Set createdBy from security context
                     .build();
 
@@ -115,7 +138,6 @@ public class OrderDetailServiceImpl implements OrderDetailService {
             existingOrderDetail.setNik(orderDetailRequest.getNik());
             existingOrderDetail.setFullName(orderDetailRequest.getFullName());
             existingOrderDetail.setBirthDate(orderDetailRequest.getBirthDate());
-            existingOrderDetail.setTicketCode(orderDetailRequest.getTicketCode());
             existingOrderDetail.setUpdatedBy(getCurrentAuditor()); // Set updatedBy from security context
 
             OrderDetail updatedOrderDetail = orderDetailRepository.save(existingOrderDetail);
@@ -174,5 +196,13 @@ public class OrderDetailServiceImpl implements OrderDetailService {
                 .UpdatedAt(orderDetail.getUpdatedAt())
                 .UpdatedBy(orderDetail.getUpdatedBy())
                 .build();
+    }
+
+    private String generateRandomNumberString(int length) {
+        Random random = new Random();
+        int min = (int) Math.pow(10, length - 1);
+        int max = (int) Math.pow(10, length) - 1;
+        int randomNumber = random.nextInt(max - min + 1) + min;
+        return String.format("%0" + length + "d", randomNumber);
     }
 }

@@ -20,4 +20,5 @@ public class RegisterRequest {
     private String role; // Role can be null, defaults to USER in service
     private String gender; // Gender can be null
     private String nik; // NIK can be null
+    private Integer wallet; // Wallet can be null
 }

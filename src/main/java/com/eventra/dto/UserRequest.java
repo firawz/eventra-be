@@ -27,4 +27,5 @@ public class UserRequest {
     private String gender;
 
     private String nik;
+    private Integer wallet;
 }

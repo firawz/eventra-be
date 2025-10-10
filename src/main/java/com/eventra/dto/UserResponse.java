@@ -16,5 +16,6 @@ public class UserResponse {
     private String gender;
     private String nik;
     private Boolean isRegistered;
+    private Integer wallet;
 
 }
