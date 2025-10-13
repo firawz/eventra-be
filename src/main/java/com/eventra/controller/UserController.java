@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +43,7 @@ public class UserController {
 	}
 
 	@GetMapping("/{id}")
+	@PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and #id.toString() == authentication.principal.userId.toString())")
 	public ResponseEntity<ApiResponse<UserResponse>> getUserById(@PathVariable UUID id) {
 		try {
 			ApiResponse<UserResponse> serviceResponse = userService.getUserById(id);
@@ -54,8 +56,9 @@ public class UserController {
 	}
 
 	@PutMapping("/{id}")
+	@PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and #id.toString() == authentication.principal.userId.toString())")
 	public ResponseEntity<ApiResponse<UserResponse>> updateUser(@PathVariable UUID id,
-			@Valid @RequestBody UserRequest userRequest) {
+			@RequestBody UserRequest userRequest) {
 		try {
 			ApiResponse<UserResponse> serviceResponse = userService.updateUser(id, userRequest);
 			return new ResponseEntity<>(serviceResponse, HttpStatus.OK);

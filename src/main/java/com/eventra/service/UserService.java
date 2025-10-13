@@ -128,17 +128,35 @@ public class UserService {
 			User user = userRepository.findById(id)
 					.orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + id));
 
-			user.setFullName(userRequest.getFullName());
-			user.setEmail(userRequest.getEmail());
-			user.setPhone(userRequest.getPhone());
+			if (userRequest.getFullName() != null) {
+				user.setFullName(userRequest.getFullName());
+			}
+			if (userRequest.getEmail() != null) {
+				user.setEmail(userRequest.getEmail());
+			}
+			if (userRequest.getPhone() != null) {
+				user.setPhone(userRequest.getPhone());
+			}
 			// Only update password if a new one is provided
 			if (userRequest.getPassword() != null && !userRequest.getPassword().isEmpty()) {
 				user.setPassword(passwordEncoder.encode(userRequest.getPassword()));
 			}
-			user.setRole(userRequest.getRole() != null ? userRequest.getRole() : user.getRole()); // Keep existing role if
-																									// not provided
-			user.setGender(userRequest.getGender());
-			user.setNik(userRequest.getNik());
+			if (userRequest.getRole() != null) {
+				user.setRole(userRequest.getRole());
+			}
+			if (userRequest.getGender() != null) {
+				user.setGender(userRequest.getGender());
+			}
+			if (userRequest.getNik() != null) {
+				user.setNik(userRequest.getNik());
+			}
+
+			// Handle wallet update
+			if (userRequest.getWallet() != null) {
+				Integer currentWallet = user.getWallet() != null ? user.getWallet() : 0;
+				user.setWallet(currentWallet + userRequest.getWallet());
+			}
+
 			user.setUpdatedAt(LocalDateTime.now()); // Set updatedAt
 			user.setUpdatedBy(getCurrentAuditor()); // Set updatedBy from security context
 
@@ -190,6 +208,7 @@ public class UserService {
 		userResponse.setGender(user.getGender());
 		userResponse.setNik(user.getNik());
 		userResponse.setIsRegistered(user.getIsRegistered());
+		userResponse.setWallet(user.getWallet());
 		return userResponse;
 	}
 }

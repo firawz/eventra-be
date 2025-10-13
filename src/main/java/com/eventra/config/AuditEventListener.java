@@ -34,8 +34,6 @@ public class AuditEventListener {
     private RoleAuditRepository roleAuditRepository;
     @Autowired
     private TicketAuditRepository ticketAuditRepository;
-    @Autowired
-    private JwtUtil jwtUtil; // Inject JwtUtil
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleAuditCreatedEvent(AuditCreatedEvent event) {

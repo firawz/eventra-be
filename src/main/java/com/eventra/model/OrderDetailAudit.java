@@ -6,6 +6,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.Getter;
@@ -46,7 +48,7 @@ public class OrderDetailAudit {
     private String fullName;
 
     @Column(name = "birth_date", nullable = false)
-    private LocalDateTime birthDate;
+    private LocalDate birthDate;
 
     @Column(name = "ticket_code", nullable = false)
     private String ticketCode;
