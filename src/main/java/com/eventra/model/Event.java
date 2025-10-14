@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -58,7 +59,7 @@ public class Event {
     private String category;
 
     @Column(nullable = false)
-    private String status;
+    private EventStatus status;
 
     @PrePersist
     protected void onCreate() {

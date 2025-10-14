@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import com.eventra.model.EventStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import jakarta.persistence.criteria.Predicate;
@@ -71,7 +73,12 @@ public class EventService {
                     predicates.add(cb.equal(cb.lower(root.get("category")), category.toLowerCase()));
                 }
                 if (status != null && !status.isEmpty()) {
-                    predicates.add(cb.equal(cb.lower(root.get("status")), status.toLowerCase()));
+                    try {
+                        EventStatus eventStatus = EventStatus.valueOf(status.toUpperCase());
+                        predicates.add(cb.equal(root.get("status"), eventStatus));
+                    } catch (IllegalArgumentException e) {
+                        logger.warn("Invalid status provided: {}", status);
+                    }
                 }
 
                 return cb.and(predicates.toArray(new Predicate[0]));
@@ -228,7 +235,7 @@ public class EventService {
         eventResponse.setUpdatedBy(event.getUpdatedBy());
         eventResponse.setImageUrl(event.getImageUrl());
         eventResponse.setCategory(event.getCategory());
-        eventResponse.setStatus(event.getStatus());
+        eventResponse.setStatus(event.getStatus().name()); // Convert enum to string
 
         // Fetch and convert tickets
         List<TicketResponse> ticketResponses = ticketService.getTicketsByEventId(event.getId());

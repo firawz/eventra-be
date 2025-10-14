@@ -119,7 +119,6 @@ public class OrderServiceImpl implements OrderService {
 
 			if (orderRequest.getOrderDetails() != null && !orderRequest.getOrderDetails().isEmpty()) {
                 orderRequest.getOrderDetails().forEach(detailRequest -> {
-					System.out.println(detailRequest+ " ini detail request");
                     detailRequest.setOrderId(savedOrder.getId()); // Set the newly created order's ID
                     detailRequest.setTicketId(orderRequest.getTicketId()); // Set the ticketId from OrderRequest
                     detailRequest.setCreatedBy(getCurrentAuditor());

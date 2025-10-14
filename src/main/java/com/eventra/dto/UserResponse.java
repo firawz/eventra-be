@@ -17,5 +17,6 @@ public class UserResponse {
     private String nik;
     private Boolean isRegistered;
     private Integer wallet;
+	private UUID id;
 
 }

@@ -61,7 +61,7 @@ public class OrderDetailServiceImpl implements OrderDetailService {
             OrderDetail orderDetail = OrderDetail.builder()
                     .Order(order)
                     .Nik(orderDetailRequest.getNik())
-                    .FullName(orderDetailRequest.getFullName())
+                    .FullName(orderDetailRequest.getFullName().toUpperCase())
                     .Email(orderDetailRequest.getEmail())
                     .TicketCode(ticketCode) // Set the generated ticketCode
                     .TicketId(orderDetailRequest.getTicketId()) // Set ticketId from request

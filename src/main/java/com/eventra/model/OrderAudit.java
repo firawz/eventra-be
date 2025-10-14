@@ -46,7 +46,7 @@ public class OrderAudit {
     private String status;
 
     @Column(name = "TotalPrice", nullable = false)
-    private Double totalPrice;
+    private Integer totalPrice;
 
     @Column(name = "UpdatedAt")
     private LocalDateTime updatedAt;

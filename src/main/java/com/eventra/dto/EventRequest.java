@@ -10,6 +10,8 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.OffsetDateTime;
 import java.util.List;
 
+import com.eventra.model.EventStatus;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -36,8 +38,8 @@ public class EventRequest {
     @NotBlank(message = "Category cannot be empty")
     private String category;
 
-    @NotBlank(message = "Status cannot be empty")
-    private String status;
+    @NotNull(message = "Status cannot be null")
+    private EventStatus status;
 
     private List<TicketRequest> tickets;
 }

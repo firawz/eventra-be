@@ -102,6 +102,5 @@ public class EventController {
         }
     }
 
-    // Generic API Response class
     
 }
