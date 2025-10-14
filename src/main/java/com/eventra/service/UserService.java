@@ -277,7 +277,7 @@ public class UserService {
 		userResponse.setSub(user.getId()); // Edit : by Gilang change to sub
 		userResponse.setFullName(user.getFullName());
 		userResponse.setEmail(user.getEmail());
-		userResponse.setPhoneNumber(user.getPhone()); // Edit by : Gilang Changed to phoneNumber
+		userResponse.setPhone(user.getPhone()); // Edit by : Gilang Changed to phoneNumber
 		userResponse.setRole(user.getRole());
 		userResponse.setCreatedAt(user.getCreatedAt());
 		userResponse.setGender(user.getGender());

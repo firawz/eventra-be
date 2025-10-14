@@ -10,7 +10,7 @@ public class UserResponse {
     private UUID sub; // Edit : by Gilang change to sub
     private String fullName;
     private String email;
-    private String phoneNumber; // Edit by : Gilang Changed to phoneNumber
+    private String phone; // Edit by : Gilang Changed to phoneNumber
     private String role; // Changed to String
     private LocalDateTime createdAt;
     private String gender;
