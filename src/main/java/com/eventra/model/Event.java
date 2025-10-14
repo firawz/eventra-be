@@ -59,7 +59,7 @@ public class Event {
     private String category;
 
     @Column(nullable = false)
-    private EventStatus status;
+    private String status;
 
     @PrePersist
     protected void onCreate() {

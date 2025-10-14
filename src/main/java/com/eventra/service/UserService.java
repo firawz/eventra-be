@@ -4,6 +4,10 @@ import com.eventra.dto.ApiResponse;
 import com.eventra.dto.RegisterRequest;
 import com.eventra.dto.UserRequest;
 import com.eventra.dto.PaginationResponse;
+import com.eventra.dto.ApiResponse;
+import com.eventra.dto.RegisterRequest;
+import com.eventra.dto.UserRequest;
+import com.eventra.dto.PaginationResponse;
 import com.eventra.dto.UserResponse;
 import com.eventra.exception.ResourceNotFoundException;
 import com.eventra.model.Role;
@@ -44,8 +48,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.eventra.config.CustomUserDetails;
 import com.eventra.dto.ApiResponse;
 import com.eventra.dto.EventResponse;
+import com.eventra.dto.OrderResponse;
 import com.eventra.dto.PaginationResponse;
 import com.eventra.dto.RegisterRequest;
+import com.eventra.dto.UserEventOrderResponse;
 import com.eventra.dto.UserRequest;
 import com.eventra.dto.UserResponse;
 import com.eventra.exception.ResourceNotFoundException;
@@ -55,9 +61,12 @@ import com.eventra.model.Order;
 import com.eventra.model.Role;
 import com.eventra.model.User;
 import com.eventra.repository.EventRepository;
+import com.eventra.repository.OrderDetailRepository;
 import com.eventra.repository.OrderRepository;
 import com.eventra.repository.UserRepository;
 import com.eventra.service.AuditService;
+import com.eventra.dto.OrderDetailResponse;
+import com.eventra.model.OrderDetail;
 
 @Service
 public class UserService {
@@ -72,6 +81,9 @@ public class UserService {
 
 	@Autowired
 	private EventRepository eventRepository;
+
+	@Autowired
+	private OrderDetailRepository orderDetailRepository; // Inject OrderDetailRepository
 
 	@Autowired
 	private PasswordEncoder passwordEncoder;
@@ -216,43 +228,53 @@ public class UserService {
 		}
 	}
 
-	public ApiResponse<PaginationResponse<EventResponse>> getEventsByUserId(UUID userId, int page, int limit, String sortBy, String sortDir, Optional<String> eventStatus) {
+	public ApiResponse<PaginationResponse<UserEventOrderResponse>> getEventsByUserId(UUID userId, int page, int limit, String sortBy, String sortDir, Optional<String> eventStatus, Optional<Boolean> orderDetails) {
 		try {
 			User user = userRepository.findById(userId)
 					.orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 
 			List<Order> orders = orderRepository.findByUser(user);
 
-			Set<UUID> eventIds = orders.stream()
-					.map(order -> order.getEvent().getId())
-					.collect(Collectors.toSet());
+			// Filter orders based on event status if provided
+			List<Order> filteredOrders = orders.stream()
+					.filter(order -> eventStatus.isEmpty() || order.getEvent().getStatus().toString().equalsIgnoreCase(eventStatus.get()))
+					.collect(Collectors.toList());
 
+			// Apply pagination and sorting to the filtered orders
 			Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending()
 					: Sort.by(sortBy).descending();
 			Pageable pageable = PageRequest.of(page - 1, limit, sort);
 
-			Page<Event> eventPage;
-			if (eventStatus.isPresent()) {
-				EventStatus status = EventStatus.valueOf(eventStatus.get().toUpperCase());
-				eventPage = eventRepository.findByIdInAndStatus(eventIds, status, pageable);
-			} else {
-				eventPage = eventRepository.findByIdIn(eventIds, pageable);
-			}
+			int start = (int) pageable.getOffset();
+			int end = Math.min((start + pageable.getPageSize()), filteredOrders.size());
+			List<Order> pagedOrders = filteredOrders.subList(start, end);
 
-			List<EventResponse> content = eventPage.getContent().stream()
-					.map(this::mapEventToEventResponse)
+			List<UserEventOrderResponse> content = pagedOrders.stream()
+					.map(order -> {
+						UserEventOrderResponse userEventOrderResponse = new UserEventOrderResponse();
+						userEventOrderResponse.setEvent(mapEventToEventResponse(order.getEvent()));
+						userEventOrderResponse.setOrder(mapOrderToOrderResponse(order));
+
+						if (orderDetails.isPresent() && orderDetails.get()) {
+							List<OrderDetail> details = orderDetailRepository.findByOrder(order);
+							userEventOrderResponse.setOrderDetails(details.stream()
+									.map(this::mapOrderDetailToOrderDetailResponse)
+									.collect(Collectors.toList()));
+						}
+						return userEventOrderResponse;
+					})
 					.collect(Collectors.toList());
 
-			return new ApiResponse<>(true, "Events retrieved successfully for user", new PaginationResponse<>(
+			return new ApiResponse<>(true, "Events and Orders retrieved successfully for user", new PaginationResponse<>(
 					content,
-					eventPage.getNumber() + 1,
-					eventPage.getSize(),
-					eventPage.getTotalElements(),
-					eventPage.getTotalPages(),
-					eventPage.isLast()));
+					pageable.getPageNumber() + 1,
+					pageable.getPageSize(),
+					filteredOrders.size(),
+					(int) Math.ceil((double) filteredOrders.size() / pageable.getPageSize()),
+					(start + pageable.getPageSize()) >= filteredOrders.size()));
 		} catch (Exception e) {
-			logger.error("Error retrieving events for user ID {}: {}", userId, e.getMessage(), e);
-			throw new RuntimeException("Error retrieving events for user: " + e.getMessage());
+			logger.error("Error retrieving events and orders for user ID {}: {}", userId, e.getMessage(), e);
+			throw new RuntimeException("Error retrieving events and orders for user: " + e.getMessage());
 		}
 	}
 
@@ -301,8 +323,39 @@ public class UserService {
 		eventResponse.setUpdatedBy(event.getUpdatedBy());
 		eventResponse.setImageUrl(event.getImageUrl());
 		eventResponse.setCategory(event.getCategory());
-		eventResponse.setStatus(event.getStatus().name()); // Assuming EventStatus is an enum
+		eventResponse.setStatus(event.getStatus().toString()); // Assuming EventStatus is an enum
 		// Tickets are not mapped here as per the current EventResponse DTO structure
 		return eventResponse;
+	}
+
+	private OrderResponse mapOrderToOrderResponse(Order order) {
+		OrderResponse orderResponse = new OrderResponse();
+		orderResponse.setId(order.getId());
+		orderResponse.setOrderNumber(order.getOrderNumber());
+		orderResponse.setUserId(order.getUser().getId());
+		orderResponse.setEventId(order.getEvent().getId());
+		orderResponse.setStatus(order.getStatus());
+		orderResponse.setTotalPrice(order.getTotalPrice());
+		orderResponse.setCreatedAt(order.getCreatedAt());
+		orderResponse.setCreatedBy(order.getCreatedBy());
+		orderResponse.setUpdatedAt(order.getUpdatedAt());
+		orderResponse.setUpdatedBy(order.getUpdatedBy());
+		return orderResponse;
+	}
+
+	private OrderDetailResponse mapOrderDetailToOrderDetailResponse(OrderDetail orderDetail) {
+		OrderDetailResponse orderDetailResponse = new OrderDetailResponse();
+		orderDetailResponse.setId(orderDetail.getId());
+		orderDetailResponse.setOrderId(orderDetail.getOrder().getId()); // Assuming OrderDetail has a getOrder() method
+		orderDetailResponse.setNik(orderDetail.getNik());
+		orderDetailResponse.setFullName(orderDetail.getFullName());
+		orderDetailResponse.setEmail(orderDetail.getEmail());
+		orderDetailResponse.setTicketCode(orderDetail.getTicketCode());
+		orderDetailResponse.setTicketId(orderDetail.getTicketId());
+		orderDetailResponse.setCreatedAt(orderDetail.getCreatedAt());
+		orderDetailResponse.setCreatedBy(orderDetail.getCreatedBy());
+		orderDetailResponse.setUpdatedAt(orderDetail.getUpdatedAt());
+		orderDetailResponse.setUpdatedBy(orderDetail.getUpdatedBy());
+		return orderDetailResponse;
 	}
 }

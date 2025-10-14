@@ -28,6 +28,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.time.LocalDateTime; // Keep LocalDateTime for CreatedAt/UpdatedAt
 import com.eventra.model.Event;
+import com.eventra.model.EventStatus;
 import com.eventra.model.User;
 
 @Service
@@ -50,6 +51,11 @@ public class OrderDetailServiceImpl implements OrderDetailService {
             Event event = order.getEvent();
             User user = order.getUser();
 
+            // Check event status
+            if (event.getStatus().toString().equals(EventStatus.CANCELED.toString()) || event.getStatus().toString().equals(EventStatus.FINISHED.toString())) {
+                throw new RuntimeException("Cannot create order detail: Event is " + event.getStatus().toString());
+            }
+
             // Generate ticketCode
             String eventTitlePrefix = event.getTitle().substring(0, Math.min(event.getTitle().length(), 2)).toUpperCase();
             String randomNumber = generateRandomNumberString(6);
@@ -59,7 +65,7 @@ public class OrderDetailServiceImpl implements OrderDetailService {
 
             // BirthDate has been replaced with Email.
             OrderDetail orderDetail = OrderDetail.builder()
-                    .Order(order)
+                    .order(order)
                     .Nik(orderDetailRequest.getNik())
                     .FullName(orderDetailRequest.getFullName().toUpperCase())
                     .Email(orderDetailRequest.getEmail())

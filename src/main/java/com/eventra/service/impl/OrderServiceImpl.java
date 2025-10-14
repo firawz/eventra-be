@@ -28,8 +28,10 @@ import com.eventra.config.CustomUserDetails;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.text.DecimalFormat;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -109,6 +111,19 @@ public class OrderServiceImpl implements OrderService {
             Order order = new Order();
             order.setUser(user);
             order.setEvent(event);
+
+            // Generate order number
+            String eventSuffix = event.getTitle().replaceAll("[^a-zA-Z0-9]", "").toUpperCase();
+            if (eventSuffix.length() > 3) {
+                eventSuffix = eventSuffix.substring(0, 3);
+            } else if (eventSuffix.isEmpty()) {
+                eventSuffix = "EVT"; // Default suffix if event name is empty or non-alphanumeric
+            }
+            Random random = new Random();
+            int randomNumber = random.nextInt(900000) + 100000; // 6-digit random number
+            String orderNumber = eventSuffix + new DecimalFormat("000000").format(randomNumber);
+            order.setOrderNumber(orderNumber);
+
 			order.setStatus("COMPLETED");
             order.setTotalPrice(orderRequest.getTotalPrice());
             order.setCreatedAt(LocalDateTime.now());
@@ -207,6 +222,7 @@ public class OrderServiceImpl implements OrderService {
     private OrderResponse convertToDto(Order order) {
         OrderResponse dto = new OrderResponse();
         dto.setId(order.getId());
+        dto.setOrderNumber(order.getOrderNumber());
         dto.setUserId(order.getUser().getId());
         dto.setEventId(order.getEvent().getId());
         dto.setStatus(order.getStatus());

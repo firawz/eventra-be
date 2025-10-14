@@ -18,7 +18,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class Order {
 
-    @OneToMany(mappedBy = "Order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<OrderDetail> OrderDetails = new HashSet<>();
 
     @Id
@@ -33,6 +33,9 @@ public class Order {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "EventId", nullable = false)
     private Event event;
+
+    @Column(name = "OrderNumber", unique = true, nullable = false)
+    private String orderNumber;
 
     @Column(name = "Status", nullable = false)
     private String status; // e.g., "PENDING", "COMPLETED", "CANCELLED"

@@ -2,6 +2,7 @@ package com.eventra.controller;
 
 import com.eventra.dto.ApiResponse;
 import com.eventra.dto.EventResponse;
+import com.eventra.dto.UserEventOrderResponse;
 import com.eventra.dto.PaginationResponse;
 import com.eventra.dto.UserRequest;
 import com.eventra.dto.UserResponse;
@@ -85,15 +86,16 @@ public class UserController {
 
 	@GetMapping("/{userId}/events")
 	@PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and #userId.toString() == authentication.principal.userId.toString())")
-	public ResponseEntity<ApiResponse<PaginationResponse<EventResponse>>> getEventsByUserId(
+	public ResponseEntity<ApiResponse<PaginationResponse<UserEventOrderResponse>>> getEventsByUserId(
 			@PathVariable UUID userId,
 			@RequestParam(defaultValue = "1") int page,
 			@RequestParam(defaultValue = "10") int limit,
 			@RequestParam(defaultValue = "createdAt") String sortBy,
 			@RequestParam(defaultValue = "asc") String sortDir,
-			@RequestParam Optional<String> eventStatus) {
+			@RequestParam Optional<String> eventStatus,
+			@RequestParam Optional<Boolean> orderDetails) {
 		try {
-			ApiResponse<PaginationResponse<EventResponse>> serviceResponse = userService.getEventsByUserId(userId, page, limit, sortBy, sortDir, eventStatus);
+			ApiResponse<PaginationResponse<UserEventOrderResponse>> serviceResponse = userService.getEventsByUserId(userId, page, limit, sortBy, sortDir, eventStatus, orderDetails);
 			return new ResponseEntity<>(serviceResponse, HttpStatus.OK);
 		} catch (Exception e) {
 			logger.error("Error retrieving events for user ID {}: {}", userId, e.getMessage(), e);

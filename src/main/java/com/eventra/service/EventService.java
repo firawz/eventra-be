@@ -125,7 +125,7 @@ public class EventService {
             event.setEndDate(eventRequest.getEndDate());
             event.setImageUrl(eventRequest.getImageUrl());
             event.setCategory(eventRequest.getCategory());
-            event.setStatus(eventRequest.getStatus());
+            event.setStatus(eventRequest.getStatus().toString());
             event.setCreatedAt(OffsetDateTime.now());
             event.setUpdatedAt(OffsetDateTime.now());
             event.setCreatedBy(getCurrentAuditor()); // Set createdBy from security context
@@ -175,7 +175,7 @@ public class EventService {
                             existingEvent.setCategory(eventRequest.getCategory());
                         }
                         if (eventRequest.getStatus() != null) {
-                            existingEvent.setStatus(eventRequest.getStatus());
+                            existingEvent.setStatus(eventRequest.getStatus().toString());
                         }
                         existingEvent.setUpdatedAt(OffsetDateTime.now());
                         existingEvent.setUpdatedBy(getCurrentAuditor()); // Set updatedBy from security context
@@ -235,7 +235,7 @@ public class EventService {
         eventResponse.setUpdatedBy(event.getUpdatedBy());
         eventResponse.setImageUrl(event.getImageUrl());
         eventResponse.setCategory(event.getCategory());
-        eventResponse.setStatus(event.getStatus().name()); // Convert enum to string
+        eventResponse.setStatus(event.getStatus().toString()); // Convert enum to string
 
         // Fetch and convert tickets
         List<TicketResponse> ticketResponses = ticketService.getTicketsByEventId(event.getId());
