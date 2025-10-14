@@ -38,7 +38,7 @@ public class Order {
     private String status; // e.g., "PENDING", "COMPLETED", "CANCELLED"
 
     @Column(name = "TotalPrice", nullable = false)
-    private Double totalPrice;
+    private Integer totalPrice;
 
     @Column(name = "CreatedAt", nullable = false, updatable = false)
     private LocalDateTime createdAt;

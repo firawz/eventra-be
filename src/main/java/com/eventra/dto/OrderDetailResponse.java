@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import jakarta.validation.constraints.Email;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -19,8 +20,9 @@ public class OrderDetailResponse {
     private UUID OrderId;
     private String Nik;
     private String FullName;
-    private LocalDate BirthDate;
+    private String Email;
     private String TicketCode;
+    private UUID TicketId;
     private LocalDateTime CreatedAt;
     private String CreatedBy;
     private LocalDateTime UpdatedAt;

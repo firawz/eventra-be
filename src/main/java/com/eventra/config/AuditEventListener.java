@@ -156,8 +156,9 @@ public class AuditEventListener {
                 orderDetailAudit.setOrderId(orderDetail.getOrder().getId());
                 orderDetailAudit.setNik(orderDetail.getNik());
                 orderDetailAudit.setFullName(orderDetail.getFullName());
-                orderDetailAudit.setBirthDate(orderDetail.getBirthDate());
+                orderDetailAudit.setEmail(orderDetail.getEmail());
                 orderDetailAudit.setTicketCode(orderDetail.getTicketCode());
+                orderDetailAudit.setTicketId(orderDetail.getTicketId());
 
                 if (auditType == AuditType.CREATE) {
                     orderDetailAudit.setCreatedAt(LocalDateTime.now());

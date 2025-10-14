@@ -16,7 +16,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -29,7 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import com.eventra.config.CustomUserDetails;
-import com.eventra.exception.ResourceNotFoundException;
 
 @Service
 public class EventService {
@@ -122,9 +120,10 @@ public class EventService {
             event.setCategory(eventRequest.getCategory());
             event.setStatus(eventRequest.getStatus());
             event.setCreatedAt(OffsetDateTime.now());
+            event.setUpdatedAt(OffsetDateTime.now());
             event.setCreatedBy(getCurrentAuditor()); // Set createdBy from security context
+			event.setUpdatedBy(getCurrentAuditor());
             Event savedEvent = eventRepository.save(event);
-            auditService.publishCreateAudit(savedEvent, "CREATE"); // Use new audit method
 
             // Create tickets if provided
             if (eventRequest.getTickets() != null && !eventRequest.getTickets().isEmpty()) {
@@ -133,6 +132,7 @@ public class EventService {
                     ticketService.createTicket(ticketRequest);
                 }
             }
+            auditService.publishCreateAudit(savedEvent, "CREATE"); // Use new audit method
 
             return convertToDto(savedEvent);
         } catch (Exception e) {

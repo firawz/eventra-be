@@ -12,6 +12,7 @@ import com.eventra.repository.OrderRepository;
 import com.eventra.repository.UserRepository;
 import com.eventra.service.OrderDetailService;
 import com.eventra.service.OrderService;
+import com.eventra.service.TicketService; // Import TicketService
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -49,6 +50,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private OrderDetailService orderDetailService;
+
+    @Autowired
+    private TicketService ticketService;
 
     @Override
     public PaginationResponse<OrderResponse> getAllOrders(int page, int limit) {
@@ -97,25 +101,38 @@ public class OrderServiceImpl implements OrderService {
             Event event = eventRepository.findById(orderRequest.getEventId())
                     .orElseThrow(() -> new ResourceNotFoundException("Event not found with id " + orderRequest.getEventId()));
 
+            // Check if user wallet is sufficient
+            if (user.getWallet() < orderRequest.getTotalPrice()) {
+                throw new RuntimeException("Insufficient wallet balance to create order.");
+            }
+
             Order order = new Order();
             order.setUser(user);
             order.setEvent(event);
-            order.setStatus(orderRequest.getStatus());
+			order.setStatus("COMPLETED");
             order.setTotalPrice(orderRequest.getTotalPrice());
             order.setCreatedAt(LocalDateTime.now());
             order.setCreatedBy(getCurrentAuditor()); // Set createdBy from security context
 
             Order savedOrder = orderRepository.save(order);
             auditService.publishCreateAudit(savedOrder, "CREATE"); // Use new audit method
-			System.out.println(orderRequest+ " ini order request");
-			System.out.println(orderRequest.getOrderDetails()+ " ini order detail");
-            if (orderRequest.getOrderDetails() != null && !orderRequest.getOrderDetails().isEmpty()) {
+
+			if (orderRequest.getOrderDetails() != null && !orderRequest.getOrderDetails().isEmpty()) {
                 orderRequest.getOrderDetails().forEach(detailRequest -> {
 					System.out.println(detailRequest+ " ini detail request");
                     detailRequest.setOrderId(savedOrder.getId()); // Set the newly created order's ID
+                    detailRequest.setTicketId(orderRequest.getTicketId()); // Set the ticketId from OrderRequest
                     detailRequest.setCreatedBy(getCurrentAuditor());
                     orderDetailService.createOrderDetail(detailRequest);
                 });
+
+                // Reduce ticket quota
+                int ticketsOrdered = orderRequest.getOrderDetails().size();
+                ticketService.reduceTicketQuota(orderRequest.getTicketId(), ticketsOrdered);
+
+                // Deduct total price from user's wallet
+                user.setWallet(user.getWallet() - orderRequest.getTotalPrice());
+                userRepository.save(user);
             }
 
             return convertToDto(savedOrder);
@@ -141,7 +158,6 @@ public class OrderServiceImpl implements OrderService {
 
             order.setUser(user);
             order.setEvent(event);
-            order.setStatus(orderRequest.getStatus());
             order.setTotalPrice(orderRequest.getTotalPrice());
             order.setUpdatedAt(LocalDateTime.now());
             order.setUpdatedBy(getCurrentAuditor()); // Set updatedBy from security context

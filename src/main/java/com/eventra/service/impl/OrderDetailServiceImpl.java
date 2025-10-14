@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.time.LocalDate;
 import java.time.LocalDateTime; // Keep LocalDateTime for CreatedAt/UpdatedAt
 import com.eventra.model.Event;
 import com.eventra.model.User;
@@ -58,19 +57,14 @@ public class OrderDetailServiceImpl implements OrderDetailService {
 
             String ticketCode = eventTitlePrefix + randomNumber + userEmailPrefix;
 
-            // Parse BirthDate string to LocalDateTime
-            // BirthDate is now LocalDate in OrderDetailRequest, no manual parsing needed if Spring handles it.
-            // However, if it's still a String in the request, we would parse it to LocalDate.
-            // Since OrderDetailRequest.BirthDate is now LocalDate, we can directly use it.
-            LocalDate birthDate = orderDetailRequest.getBirthDate();
-            logger.info("Received BirthDate: [{}]", birthDate);
-
+            // BirthDate has been replaced with Email.
             OrderDetail orderDetail = OrderDetail.builder()
                     .Order(order)
                     .Nik(orderDetailRequest.getNik())
                     .FullName(orderDetailRequest.getFullName())
-                    .BirthDate(birthDate) // Set the parsed LocalDateTime
+                    .Email(orderDetailRequest.getEmail())
                     .TicketCode(ticketCode) // Set the generated ticketCode
+                    .TicketId(orderDetailRequest.getTicketId()) // Set ticketId from request
                     .CreatedBy(getCurrentAuditor()) // Set createdBy from security context
                     .build();
 
@@ -137,7 +131,8 @@ public class OrderDetailServiceImpl implements OrderDetailService {
             existingOrderDetail.setOrder(order);
             existingOrderDetail.setNik(orderDetailRequest.getNik());
             existingOrderDetail.setFullName(orderDetailRequest.getFullName());
-            existingOrderDetail.setBirthDate(orderDetailRequest.getBirthDate());
+            existingOrderDetail.setEmail(orderDetailRequest.getEmail());
+            existingOrderDetail.setTicketId(orderDetailRequest.getTicketId()); // Set ticketId from request
             existingOrderDetail.setUpdatedBy(getCurrentAuditor()); // Set updatedBy from security context
 
             OrderDetail updatedOrderDetail = orderDetailRepository.save(existingOrderDetail);
@@ -189,8 +184,9 @@ public class OrderDetailServiceImpl implements OrderDetailService {
                 .OrderId(orderDetail.getOrder().getId())
                 .Nik(orderDetail.getNik())
                 .FullName(orderDetail.getFullName())
-                .BirthDate(orderDetail.getBirthDate())
+                .Email(orderDetail.getEmail())
                 .TicketCode(orderDetail.getTicketCode())
+                .TicketId(orderDetail.getTicketId())
                 .CreatedAt(orderDetail.getCreatedAt())
                 .CreatedBy(orderDetail.getCreatedBy())
                 .UpdatedAt(orderDetail.getUpdatedAt())

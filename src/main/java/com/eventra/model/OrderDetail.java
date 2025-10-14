@@ -8,6 +8,7 @@ import org.hibernate.annotations.GenericGenerator;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import jakarta.validation.constraints.Email;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -35,11 +36,15 @@ public class OrderDetail {
     @Column(name = "full_name", nullable = false)
     private String FullName;
 
-    @Column(name = "birth_date", nullable = false)
-    private LocalDate BirthDate;
+    @Email
+    @Column(name = "email", nullable = false)
+    private String Email;
 
     @Column(name = "ticket_code", nullable = false)
     private String TicketCode;
+
+    @Column(name = "ticket_id", nullable = false)
+    private UUID TicketId;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime CreatedAt;

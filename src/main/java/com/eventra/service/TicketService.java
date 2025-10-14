@@ -28,6 +28,7 @@ import com.eventra.config.CustomUserDetails;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import com.eventra.repository.TicketRepository; // Import TicketRepository
 
 @Service
 public class TicketService {
@@ -142,6 +143,25 @@ public class TicketService {
         } catch (Exception e) {
             logger.error("Error deleting ticket with ID {}: {}", id, e.getMessage(), e);
             throw new RuntimeException("Error deleting ticket: " + e.getMessage());
+        }
+    }
+
+    public void reduceTicketQuota(UUID ticketId, int quantity) {
+        try {
+            Ticket ticket = ticketRepository.findById(ticketId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Ticket not found with id " + ticketId));
+            if (ticket.getQuota() < quantity) {
+                throw new RuntimeException("Not enough tickets available for category: " + ticket.getTicketCategory());
+            }
+            ticket.setQuota(ticket.getQuota() - quantity);
+            ticketRepository.save(ticket);
+            auditService.publishUpdateAudit(ticket, "UPDATE_QUOTA");
+        } catch (ResourceNotFoundException e) {
+            logger.warn("Resource not found during reduceTicketQuota for ID {}: {}", ticketId, e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error reducing ticket quota for ID {}: {}", ticketId, e.getMessage(), e);
+            throw new RuntimeException("Error reducing ticket quota: " + e.getMessage());
         }
     }
 

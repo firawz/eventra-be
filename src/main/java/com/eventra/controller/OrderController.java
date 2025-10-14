@@ -8,6 +8,7 @@ import com.eventra.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -49,6 +50,7 @@ public class OrderController {
     }
 
     @PostMapping
+	@PreAuthorize("hasRole('USER') and #orderRequest.userId.toString() == authentication.principal.userId.toString()")
     public ResponseEntity<ApiResponse<OrderResponse>> createOrder(@RequestBody OrderRequest orderRequest) {
         try {
             OrderResponse createdOrder = orderService.createOrder(orderRequest);

@@ -8,6 +8,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
 import java.time.LocalDate;
+import jakarta.validation.constraints.Email;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.Getter;
@@ -47,11 +48,15 @@ public class OrderDetailAudit {
     @Column(name = "full_name", nullable = false)
     private String fullName;
 
-    @Column(name = "birth_date", nullable = false)
-    private LocalDate birthDate;
+    @Email
+    @Column(name = "email", nullable = false)
+    private String email;
 
     @Column(name = "ticket_code", nullable = false)
     private String ticketCode;
+
+    @Column(name = "ticket_id", nullable = false)
+    private UUID ticketId;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;

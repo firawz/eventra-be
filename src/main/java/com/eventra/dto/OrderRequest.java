@@ -8,8 +8,9 @@ import java.util.UUID;
 public class OrderRequest {
     private UUID userId;
     private UUID eventId;
-    private String status;
-    private Double totalPrice;
+    private UUID ticketEventId;
+    private UUID ticketId;
+    private Integer totalPrice;
     private String createdBy;
     private String updatedBy;
     private List<OrderDetailRequest> orderDetails;

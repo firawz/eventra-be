@@ -8,9 +8,7 @@ import lombok.NoArgsConstructor;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
-import java.time.LocalDate;
-import org.springframework.format.annotation.DateTimeFormat;
-import com.fasterxml.jackson.annotation.JsonFormat;
+import jakarta.validation.constraints.Email;
 
 @Data
 @Builder
@@ -26,10 +24,15 @@ public class OrderDetailRequest {
     @NotBlank(message = "Full Name cannot be blank")
     private String FullName;
 
-    @NotNull(message = "Birth Date cannot be null")
-    @DateTimeFormat(pattern = "yyyy-MM-dd")
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    private LocalDate BirthDate;
+    @NotBlank(message = "Email cannot be blank")
+    @Email(message = "Invalid email format")
+    private String Email;
+
+    @NotBlank(message = "Ticket Code cannot be blank")
+    private String TicketCode;
+
+    @NotNull(message = "Ticket ID cannot be null")
+    private UUID TicketId;
 
     private String createdBy;
     private String updatedBy;

@@ -10,7 +10,7 @@ public class OrderResponse {
     private UUID userId;
     private UUID eventId;
     private String status;
-    private Double totalPrice;
+    private Integer totalPrice;
     private LocalDateTime createdAt;
     private String createdBy;
     private LocalDateTime updatedAt;
