@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
+import java.time.OffsetDateTime;
 import java.util.Set;
 import java.util.UUID;
 
@@ -15,4 +16,5 @@ import java.util.UUID;
 public interface EventRepository extends JpaRepository<Event, UUID>, JpaSpecificationExecutor<Event> {
     Page<Event> findByIdIn(Set<UUID> ids, Pageable pageable);
     Page<Event> findByIdInAndStatus(Set<UUID> ids, EventStatus status, Pageable pageable);
+    long countByStartDateAfter(OffsetDateTime startDate);
 }

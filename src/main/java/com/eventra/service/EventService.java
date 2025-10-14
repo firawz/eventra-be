@@ -5,15 +5,46 @@ import com.eventra.dto.EventResponse;
 import com.eventra.dto.PaginationResponse;
 import com.eventra.model.Event;
 import com.eventra.repository.EventRepository;
+import com.eventra.repository.OrderDetailRepository;
+import com.eventra.repository.OrderRepository;
+import com.eventra.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.eventra.dto.TicketRequest;
 import com.eventra.dto.TicketResponse;
+import com.eventra.dto.SummaryResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import com.eventra.model.EventStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import jakarta.persistence.criteria.Predicate;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.eventra.config.CustomUserDetails;
+import com.eventra.model.enums.OrderStatus;
+import com.eventra.model.Role;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
+import java.math.BigDecimal;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -42,6 +73,18 @@ public class EventService {
 
     @Autowired
     private TicketService ticketService;
+
+    @Autowired
+    private OrderDetailRepository orderDetailRepository;
+
+    @Autowired
+    private OrderRepository orderRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     private static final Logger logger = LoggerFactory.getLogger(EventService.class);
 
@@ -242,5 +285,35 @@ public class EventService {
         eventResponse.setTickets(ticketResponses);
 
         return eventResponse;
+    }
+
+    public SummaryResponse getSummaryData() {
+        // Total count of orderDetail
+        Integer totalOrderDetails = Math.toIntExact(orderDetailRepository.count());
+
+        // Total upcoming events
+        OffsetDateTime now = OffsetDateTime.now();
+        Integer totalUpcomingEvents = Math.toIntExact(eventRepository.countByStartDateAfter(now));
+
+        // Sum of totalPrice from orderTable
+        // Assuming Order has a 'totalPrice' field and OrderStatus enum
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Integer> query = cb.createQuery(Integer.class);
+        Root<com.eventra.model.Order> orderRoot = query.from(com.eventra.model.Order.class);
+        query.select(cb.sum(orderRoot.get("totalPrice")));
+        Integer totalRevenue = entityManager.createQuery(query).getSingleResult();
+        if (totalRevenue == null) {
+            totalRevenue = 0;
+        }
+
+        // Total count of users with role "USER"
+        Integer totalUsersWithUserRole = Math.toIntExact(userRepository.countByRole(Role.USER.name()));
+
+        return new SummaryResponse(
+                totalOrderDetails,
+                totalUpcomingEvents,
+                totalRevenue,
+                totalUsersWithUserRole
+        );
     }
 }

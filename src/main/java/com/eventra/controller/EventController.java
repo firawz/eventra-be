@@ -4,6 +4,7 @@ import com.eventra.dto.ApiResponse;
 import com.eventra.dto.EventRequest;
 import com.eventra.dto.EventResponse;
 import com.eventra.dto.PaginationResponse;
+import com.eventra.dto.SummaryResponse;
 import com.eventra.service.EventService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -102,5 +103,14 @@ public class EventController {
         }
     }
 
-    
+    @GetMapping("/summary")
+    public ResponseEntity<ApiResponse<SummaryResponse>> getSummary() {
+        try {
+            SummaryResponse summary = eventService.getSummaryData();
+            return ResponseEntity.ok(new ApiResponse<>(true, "Summary data retrieved successfully", summary));
+        } catch (Exception e) {
+            logger.error("Error retrieving summary data: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(false, "Error retrieving summary data: " + e.getMessage(), null));
+        }
+    }
 }
