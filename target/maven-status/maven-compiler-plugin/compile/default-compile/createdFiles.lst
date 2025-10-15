@@ -8,6 +8,7 @@ com\eventra\controller\OrderDetailController.class
 com\eventra\dto\OrderDetailResponse$OrderDetailResponseBuilder.class
 com\eventra\model\Event.class
 com\eventra\model\EventStatus.class
+com\eventra\model\enums\OrderStatus.class
 com\eventra\dto\PaginationResponse.class
 com\eventra\event\AuditCreatedEvent.class
 com\eventra\model\TicketAudit.class
@@ -47,6 +48,7 @@ com\eventra\model\OrderAudit.class
 com\eventra\dto\TicketResponse.class
 com\eventra\service\CustomUserDetailsService.class
 com\eventra\repository\OrderAuditRepository.class
+com\eventra\dto\UserEventOrderResponse.class
 com\eventra\repository\UserRepository.class
 com\eventra\repository\OrderDetailRepository.class
 com\eventra\dto\AuthRequest.class
@@ -54,6 +56,7 @@ com\eventra\service\UserService.class
 com\eventra\event\AuditDeletedEvent.class
 com\eventra\repository\TicketRepository.class
 com\eventra\service\impl\AuditServiceImpl.class
+com\eventra\dto\SummaryResponse.class
 com\eventra\model\Role.class
 com\eventra\config\AuditEventListener$AuditType.class
 com\eventra\repository\TicketAuditRepository.class
@@ -70,6 +73,7 @@ com\eventra\exception\ResourceNotFoundException.class
 com\eventra\EventraApplication.class
 com\eventra\dto\OrderResponse.class
 com\eventra\service\TicketService.class
+com\eventra\dto\UpdateUserRequest.class
 com\eventra\config\JwtUtil.class
 com\eventra\config\CustomAccessDeniedHandler.class
 com\eventra\exception\GlobalExceptionHandler.class
