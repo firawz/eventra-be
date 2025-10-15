@@ -83,6 +83,9 @@ public class User {
         if (isRegistered == null) {
             isRegistered = false;
         }
+        if (wallet == null) {
+            wallet = 0;
+        }
     }
 
     @PreUpdate

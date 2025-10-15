@@ -131,6 +131,7 @@ public class UserService {
 		user.setCreatedAt(LocalDateTime.now());
 		user.setCreatedBy(getCurrentAuditor()); // Set createdBy from security context
 		user.setIsRegistered(true);
+		user.setWallet(0);
 		return user;
 	}
 
@@ -139,7 +140,7 @@ public class UserService {
 			Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending()
 					: Sort.by(sortBy).descending();
 			Pageable pageable = PageRequest.of(page - 1, limit, sort);
-			Page<User> userPage = userRepository.findAll(pageable);
+			Page<User> userPage = userRepository.findByRole(Role.USER.name(), pageable);
 
 			List<UserResponse> content = userPage.getContent().stream()
 					.map(this::mapUserToUserResponse)

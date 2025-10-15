@@ -53,6 +53,7 @@ com\eventra\repository\UserRepository.class
 com\eventra\repository\OrderDetailRepository.class
 com\eventra\dto\AuthRequest.class
 com\eventra\service\UserService.class
+com\eventra\dto\ChangePasswordRequest.class
 com\eventra\event\AuditDeletedEvent.class
 com\eventra\repository\TicketRepository.class
 com\eventra\service\impl\AuditServiceImpl.class
